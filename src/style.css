@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Questo serve per i telefoni: evita lo zoom fastidioso quando scrivi il PIN */
+input, select, textarea {
+  font-size: 16px;
+}
