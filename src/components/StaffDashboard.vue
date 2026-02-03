@@ -4,81 +4,44 @@
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
         <span class="font-black text-xl">HOUSEKEEPING</span>
+        <span class="text-[10px] bg-blue-800 px-2 py-1 rounded text-white mt-1">Ciao, {{ currentCleanerName }}! 👋</span>
       </div>
       <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
     </div>
 
     <div class="p-4 space-y-3">
-      <div v-for="room in rooms" :key="room.id" 
-           class="card bg-white shadow-md border-l-8"
-           :class="{
-             'border-green-400 opacity-60': room.status === 'clean',
-             'border-red-500': room.status === 'dirty',
-             'border-blue-500 opacity-40': room.status === 'occupied'
-           }">
-        
+      <div v-for="room in rooms" :key="room.id" class="card bg-white shadow-md border-l-8 transition-all" :class="{'border-green-500 opacity-60': room.status === 'clean', 'border-red-500': room.status === 'dirty', 'border-yellow-400': room.status === 'cleaning', 'border-blue-500 opacity-40': room.status === 'occupied'}">
         <div class="card-body p-4 flex flex-row items-center justify-between">
           <div>
             <h2 class="text-3xl font-black text-gray-800">{{ room.number }}</h2>
-            <span class="font-bold text-[10px] uppercase tracking-wider" 
-               :class="{
-                 'text-green-600': room.status === 'clean',
-                 'text-red-600': room.status === 'dirty',
-                 'text-blue-600': room.status === 'occupied'
-               }">
-               {{ room.status === 'clean' ? 'PULITA' : (room.status === 'occupied' ? 'OCCUPATA' : 'DA PULIRE') }}
+            <span class="font-bold text-[10px] uppercase tracking-wider" :class="{'text-green-600': room.status === 'clean','text-red-600': room.status === 'dirty','text-yellow-600': room.status === 'cleaning','text-blue-600': room.status === 'occupied'}">
+               {{ getStatusText(room.status) }}
             </span>
           </div>
-          
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-center">
             <button @click="openIssueModal(room)" class="btn btn-circle btn-warning text-white btn-sm shadow-sm">⚠️</button>
-
-            <button v-if="room.status === 'dirty'" @click="cleanRoom(room)" class="btn btn-circle w-14 h-14 bg-red-500 text-white shadow-sm animate-pulse border-none">
-              🧹
-            </button>
-            <div v-else-if="room.status === 'clean'" class="btn btn-circle w-14 h-14 bg-gray-100 text-gray-300 border-none cursor-default">✓</div>
-            <div v-else-if="room.status === 'occupied'" class="btn btn-circle w-14 h-14 bg-blue-50 text-blue-200 border-none cursor-default">🚫</div>
+            <button v-if="room.status === 'dirty'" @click="startCleaning(room)" class="btn w-24 bg-red-500 text-white font-bold">INIZIA</button>
+            <button v-else-if="room.status === 'cleaning'" @click="finishCleaning(room)" class="btn w-24 bg-yellow-400 text-black font-bold animate-pulse">FINITO</button>
+            <div v-else-if="room.status === 'clean'" class="btn btn-circle bg-gray-100 text-gray-300">✓</div>
+            <div v-else-if="room.status === 'occupied'" class="btn btn-circle bg-blue-50 text-blue-200">🚫</div>
           </div>
         </div>
       </div>
     </div>
 
-    <dialog id="issue_modal" class="modal modal-bottom sm:modal-middle">
+    <dialog id="staff_modal" class="modal modal-bottom sm:modal-middle">
       <div class="modal-box bg-white">
-        <h3 class="font-bold text-lg text-center mb-4">⚠️ Segnala Guasto Stanza {{ selectedRoom?.number }}</h3>
-        
+        <h3 class="font-bold text-lg text-center mb-4">⚠️ Guasto Stanza {{ selectedRoom?.number }}</h3>
         <div class="flex flex-col gap-3">
-          <button @click="reportIssue('💡 Lampadina Rotta')" class="btn btn-outline w-full justify-start pl-6">
-            💡 Lampadina Rotta
-          </button>
-          <button @click="reportIssue('📺 TV non funziona')" class="btn btn-outline w-full justify-start pl-6">
-            📺 TV non va
-          </button>
-          <button @click="reportIssue('🚽 Bagno intasato')" class="btn btn-outline w-full justify-start pl-6">
-            🚽 Bagno intasato
-          </button>
-          <button @click="reportIssue('❄️ Aria condizionata')" class="btn btn-outline w-full justify-start pl-6">
-            ❄️ Aria Condizionata
-          </button>
-
-          <div class="divider text-xs">OPPURE SCRIVI TU</div>
-
+          <button @click="reportIssue('💡 Lampadina Rotta')" class="btn btn-outline w-full justify-start pl-6">💡 Lampadina Rotta</button>
           <div class="flex gap-2">
-            <input v-model="customIssue" type="text" placeholder="Es. Manca telecomando..." class="input input-bordered w-full" />
-            <button @click="reportIssue(customIssue)" class="btn btn-warning text-white" :disabled="!customIssue">
-              INVIA
-            </button>
+            <input v-model="customIssue" type="text" placeholder="Descrivi..." class="input input-bordered w-full" />
+            <button @click="reportIssue(customIssue)" class="btn btn-warning text-white">INVIA</button>
           </div>
         </div>
-
-        <div class="modal-action">
-          <form method="dialog">
-            <button class="btn btn-ghost w-full">Chiudi senza inviare</button>
-          </form>
-        </div>
+        <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full">Chiudi</button></form></div>
       </div>
     </dialog>
-
   </div>
 </template>
 
@@ -91,43 +54,15 @@ const router = useRouter()
 const rooms = ref([])
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
-const selectedRoom = ref(null)
-const customIssue = ref('')
+const currentCleanerName = localStorage.getItem('htlfix_user_name') || 'Staff'
+const selectedRoom = ref(null); const customIssue = ref('')
 
-const fetchRooms = async () => {
-  const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
-  if (data) rooms.value = data
-}
-
-const cleanRoom = async (room) => {
-  room.status = 'clean'
-  await supabase.from('rooms').update({ status: 'clean' }).eq('id', room.id)
-}
-
-// APRE IL MODALE
-const openIssueModal = (room) => { 
-  selectedRoom.value = room
-  customIssue.value = '' // Pulisce il testo vecchio
-  document.getElementById('issue_modal').showModal() 
-}
-
-// INVIA LA SEGNALAZIONE
-const reportIssue = async (desc) => {
-  if (!desc) return // Se è vuoto non fare nulla
-
-  // 1. Invia a Supabase
-  await supabase.from('issues').insert([{ 
-    description: desc, 
-    room_number: selectedRoom.value.number, 
-    hotel_id: hotelId, 
-    status: 'open' 
-  }])
-
-  // 2. Chiudi modale e avvisa
-  document.getElementById('issue_modal').close()
-  alert(`✅ Segnalazione inviata: "${desc}"`)
-}
-
+const fetchRooms = async () => { const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number'); if (data) rooms.value = data }
+const startCleaning = async (r) => { r.status='cleaning'; await supabase.from('rooms').update({ status: 'cleaning', current_cleaner: currentCleanerName }).eq('id', r.id) }
+const finishCleaning = async (r) => { r.status='clean'; await supabase.from('rooms').update({ status: 'clean' }).eq('id', r.id) }
+const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'DA PULIRE':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
+const reportIssue = async (desc) => { if(!desc) return; await supabase.from('issues').insert([{ description: desc, room_number: selectedRoom.value.number, hotel_id: hotelId, status: 'open' }]); document.getElementById('staff_modal').close(); alert('Inviato!') }
+const openIssueModal = (r) => { selectedRoom.value = r; customIssue.value = ''; document.getElementById('staff_modal').showModal() }
 const logout = () => { localStorage.clear(); router.push('/') }
 onMounted(() => fetchRooms())
 </script>

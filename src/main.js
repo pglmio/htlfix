@@ -3,20 +3,21 @@ import './style.css'
 import App from './App.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 1. IMPORTIAMO LE PAGINE
+// IMPORT PAGINE
 import LoginView from './components/LoginView.vue'
 import AdminDashboard from './components/AdminDashboard.vue'
 import StaffDashboard from './components/StaffDashboard.vue'
 import ReceptionDashboard from './components/ReceptionDashboard.vue'
-import MaintenanceDashboard from './components/MaintenanceDashboard.vue' // <--- QUESTA C'È?
+import MaintenanceDashboard from './components/MaintenanceDashboard.vue'
+import GovernanteDashboard from './components/GovernanteDashboard.vue' // <--- NUOVA PAGINA
 
-// 2. DEFINIAMO LE STRADE
 const routes = [
   { path: '/', component: LoginView },
   { path: '/admin', component: AdminDashboard },
   { path: '/staff', component: StaffDashboard },
   { path: '/reception', component: ReceptionDashboard },
-  { path: '/manutenzione', component: MaintenanceDashboard }, // <--- QUESTA C'È?
+  { path: '/manutenzione', component: MaintenanceDashboard },
+  { path: '/governante', component: GovernanteDashboard }, // <--- NUOVA ROTTA
 ]
 
 const router = createRouter({
@@ -24,7 +25,7 @@ const router = createRouter({
   routes,
 })
 
-// 3. CONTROLLO SICUREZZA (Redirect se non sei loggato)
+// SICUREZZA (Redirect se non sei loggato)
 router.beforeEach((to, from, next) => {
   const publicPages = ['/'];
   const authRequired = !publicPages.includes(to.path);
