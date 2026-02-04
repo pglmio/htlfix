@@ -9,12 +9,12 @@
         </div>
 
         <div class="bg-white p-4 rounded-full shadow-lg z-10 mb-2">
-          <span class="text-4xl">🏨</span>
-        </div>
+  <img src="logo.png" alt="Il mio Logo" class="rounded-xl h-12 w-12 object-cover">
+</div>
 
         <h1 class="text-2xl font-black text-white z-10 tracking-wider">HTLfix</h1>
         <p class="text-blue-200 text-xs font-bold uppercase tracking-[0.2em] mt-1 z-10">
-          SISTEMA OPERATIVO HOTEL
+          HOTEL ASSISTANT
         </p>
       </div>
 
