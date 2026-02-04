@@ -1,8 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
+  <div class="min-h-screen bg-gray-50 pb-20 relative">
     
+    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-blue-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
+      <div class="text-6xl mb-6 animate-pulse">🧹</div>
+      <h2 class="text-3xl font-black mb-2">HOUSEKEEPING</h2>
+      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Ciao {{ currentCleanerName }}! Clicca per iniziare il turno.</p>
+      <button @click="enableAudio" class="btn btn-white text-blue-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
+        INIZIA TURNO
+      </button>
+    </div>
+
     <div v-if="showToast" class="toast toast-top toast-center z-50">
-      <div class="alert alert-error shadow-xl border-2 border-white animate-bounce">
+      <div class="alert alert-error shadow-xl border-4 border-white animate-bounce">
         <span class="text-white font-bold text-lg">🧹 Nuova stanza da pulire!</span>
       </div>
     </div>
@@ -64,24 +73,25 @@ const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
 const currentCleanerName = localStorage.getItem('htlfix_user_name') || 'Staff'
 const selectedRoom = ref(null); const customIssue = ref('')
 const showToast = ref(false)
-let lastDirtyCount = 0 // Memoria stanze sporche
+const audioEnabled = ref(false)
+const lastDirtyCount = ref(-1)
 let pollingInterval = null
 
-// SUONO
 const playSound = () => {
-  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg')
+  if(!audioEnabled.value) return
+  const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3')
   audio.play().catch(e => {})
 }
+
+const enableAudio = () => { audioEnabled.value = true; playSound() }
 
 const fetchRooms = async () => { 
   const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
   
   if (data) {
-    // Conta quante sono sporche ADESSO
     const currentDirty = data.filter(r => r.status === 'dirty').length
 
-    // Se sono AUMENTATE rispetto a prima -> NOTIFICA
-    if (currentDirty > lastDirtyCount && lastDirtyCount !== 0) {
+    if (lastDirtyCount.value !== -1 && currentDirty > lastDirtyCount.value) {
       showToast.value = true
       playSound()
       setTimeout(() => showToast.value = false, 4000)
@@ -90,7 +100,7 @@ const fetchRooms = async () => {
     if (JSON.stringify(data) !== JSON.stringify(rooms.value)) {
       rooms.value = data
     }
-    lastDirtyCount = currentDirty
+    lastDirtyCount.value = currentDirty
   }
 }
 
@@ -102,7 +112,7 @@ const openIssueModal = (r) => { selectedRoom.value = r; customIssue.value = ''; 
 const logout = () => { localStorage.clear(); router.push('/') }
 
 onMounted(() => { 
-  fetchRooms().then(() => { lastDirtyCount = rooms.value.filter(r => r.status === 'dirty').length })
+  fetchRooms()
   pollingInterval = setInterval(fetchRooms, 2000) 
 })
 onUnmounted(() => clearInterval(pollingInterval))

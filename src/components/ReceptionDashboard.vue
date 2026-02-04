@@ -1,7 +1,17 @@
 <template>
-  <div class="min-h-screen bg-purple-50 pb-20">
+  <div class="min-h-screen bg-purple-50 pb-20 relative">
+    
+    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-purple-900/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
+      <div class="text-6xl mb-6 animate-bounce">🛎️</div>
+      <h2 class="text-3xl font-black mb-2">RECEPTION</h2>
+      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per attivare la console e ricevere le chiamate.</p>
+      <button @click="enableAudio" class="btn btn-white text-purple-900 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
+        INIZIA TURNO
+      </button>
+    </div>
+
     <div v-if="showToast" class="toast toast-top toast-end z-50">
-      <div class="alert alert-warning shadow-lg animate-bounce">
+      <div class="alert alert-warning shadow-lg animate-bounce border-2 border-white">
         <span>🔔 <b>Attenzione:</b> Nuovo Ticket Aperto!</span>
       </div>
     </div>
@@ -11,8 +21,10 @@
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
         <span class="font-black text-xl">RECEPTION</span>
       </div>
-      <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow mr-4"></div>
-      <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
+      <div class="flex items-center gap-3">
+         <span class="text-xs font-bold opacity-60">{{ audioEnabled ? '🔊 ON' : '🔇 OFF' }}</span>
+         <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
+      </div>
     </div>
 
     <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -57,15 +69,18 @@ const rooms = ref([]); const activeIssues = ref([])
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
 const selectedRoom = ref(null); const customIssue = ref('')
-const showToast = ref(false) // Stato per la notifica
-let lastIssueCount = 0 // Memoria dei guasti precedenti
+const showToast = ref(false)
+const audioEnabled = ref(false)
+const lastIssueCount = ref(-1) // Init a -1
 let pollingInterval = null
 
-// SUONO NOTIFICA (Beep semplice)
 const playSound = () => {
-  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg')
-  audio.play().catch(e => console.log('Audio bloccato dal browser', e))
+  if (!audioEnabled.value) return
+  const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3') // Suono Ding Dong
+  audio.play().catch(e => {})
 }
+
+const enableAudio = () => { audioEnabled.value = true; playSound() }
 
 const fetchData = async () => {
   const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
@@ -75,14 +90,14 @@ const fetchData = async () => {
   
   if (i) {
     const currentCount = i.length
-    // LOGICA NOTIFICA: Se i guasti sono AUMENTATI rispetto a prima -> NOTIFICA
-    if (currentCount > lastIssueCount && lastIssueCount !== 0) {
+    // SUONA solo se aumentano e non è il primo caricamento
+    if (lastIssueCount.value !== -1 && currentCount > lastIssueCount.value) {
       showToast.value = true
       playSound()
-      setTimeout(() => showToast.value = false, 4000) // Nascondi dopo 4 sec
+      setTimeout(() => showToast.value = false, 4000)
     }
     activeIssues.value = i.map(x => x.room_number)
-    lastIssueCount = currentCount
+    lastIssueCount.value = currentCount
   }
 }
 
@@ -94,8 +109,8 @@ const getStatusText = (s) => (s==='clean'?'LIBERA':s==='dirty'?'SPORCA':s==='cle
 const logout = () => { localStorage.clear(); router.push('/') }
 
 onMounted(() => { 
-  fetchData().then(() => { lastIssueCount = activeIssues.value.length }) // Inizializza contatore
-  pollingInterval = setInterval(fetchData, 2000) // Controllo ogni 2 sec
+  fetchData()
+  pollingInterval = setInterval(fetchData, 2000)
 })
 onUnmounted(() => clearInterval(pollingInterval))
 </script>

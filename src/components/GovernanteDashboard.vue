@@ -1,5 +1,15 @@
 <template>
-  <div class="min-h-screen bg-pink-50 pb-20">
+  <div class="min-h-screen bg-pink-50 pb-20 relative">
+
+    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-pink-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
+      <div class="text-6xl mb-6 animate-pulse">🗝️</div>
+      <h2 class="text-3xl font-black mb-2">GOVERNANTE</h2>
+      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per gestire lo staff e le stanze.</p>
+      <button @click="enableAudio" class="btn btn-white text-pink-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
+        INIZIA TURNO
+      </button>
+    </div>
+
     <div class="navbar bg-pink-600 text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
@@ -52,12 +62,10 @@
           <button @click="assignCleaner" class="btn btn-primary w-full shadow-lg" :disabled="!selectedCleaner">
             ASSEGNA ORA 🚀
           </button>
-
         </div>
         <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full">Chiudi</button></form></div>
       </div>
     </dialog>
-
   </div>
 </template>
 
@@ -68,51 +76,56 @@ import { supabase } from '../supabase'
 
 const router = useRouter()
 const rooms = ref([])
-const cleanersList = ref([]) // Qui salviamo la lista scaricata
+const cleanersList = ref([])
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name')
 const selectedRoom = ref(null)
 const selectedCleaner = ref('')
+const audioEnabled = ref(false)
 
-// 1. SCARICA LE STANZE
+const playSound = () => {
+  if(!audioEnabled.value) return
+  const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3')
+  audio.play().catch(e => {})
+}
+const enableAudio = () => { audioEnabled.value = true; playSound() }
+
 const fetchRooms = async () => {
   const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
   rooms.value = data
 }
 
-// 2. SCARICA LO STAFF (CAMERIERE) - IL FIX FONDAMENTALE
 const fetchCleaners = async () => {
-  // Scarica solo chi ha ruolo 'staff' (cameriere)
-  const { data } = await supabase.from('staff_members')
-    .select('id, name')
-    .eq('hotel_id', hotelId)
-    .eq('role', 'staff') // Filtra solo le cameriere
-  
+  const { data } = await supabase.from('staff_members').select('id, name').eq('hotel_id', hotelId).eq('role', 'staff')
   cleanersList.value = data || []
 }
 
-// 3. CAMBIA STATO
 const setStatus = async (status) => {
   await supabase.from('rooms').update({ status: status }).eq('id', selectedRoom.value.id)
   document.getElementById('gov_modal').close()
   fetchRooms()
 }
 
-// 4. ASSEGNA
 const assignCleaner = async () => {
   if (!selectedCleaner.value) return
-  // Imposta lo stato su 'dirty' (da pulire) e assegna il nome
-  await supabase.from('rooms').update({ 
-    status: 'dirty', 
-    current_cleaner: selectedCleaner.value 
-  }).eq('id', selectedRoom.value.id)
-  
+  await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id)
   document.getElementById('gov_modal').close()
-  fetchRooms() // Aggiorna subito la vista
+  fetchRooms()
   alert(`Assegnato a ${selectedCleaner.value}! Il suo telefono suonerà.`)
 }
 
 const openManageModal = (room) => {
   selectedRoom.value = room
-  selectedCleaner.value = '' // Resetta selezione
-  document.getElementById('gov_modal').showModal
+  selectedCleaner.value = ''
+  document.getElementById('gov_modal').showModal()
+}
+
+const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'DA PULIRE':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
+const logout = () => { localStorage.clear(); router.push('/') }
+
+onMounted(() => {
+  fetchRooms()
+  fetchCleaners()
+  setInterval(fetchRooms, 2000)
+})
+</script>
