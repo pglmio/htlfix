@@ -1,102 +1,118 @@
 <template>
   <div class="min-h-screen bg-pink-50 pb-20">
-    <div class="navbar bg-pink-700 text-white shadow-lg sticky top-0 z-50">
+    <div class="navbar bg-pink-600 text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
         <span class="font-black text-xl">GOVERNANTE</span>
-        <span class="text-[9px] bg-pink-900 px-2 rounded mt-1">Ciao, {{ myName }} 👋</span>
+        <span class="text-[10px] bg-pink-800 px-2 py-1 rounded text-white mt-1">Capo Servizio 🗝️</span>
       </div>
-      <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow mr-4"></div>
       <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
     </div>
 
     <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div v-for="room in rooms" :key="room.id" class="card shadow-sm border p-3 text-center transition-all bg-white relative overflow-visible">
-        <div v-if="hasIssue(room.number)" class="absolute -top-2 -right-2 bg-yellow-400 text-black w-8 h-8 flex items-center justify-center rounded-full shadow-md font-bold text-lg animate-bounce z-10 border-2 border-white">⚠️</div>
-        <h2 class="text-2xl font-black text-gray-800 mb-2">{{ room.number }}</h2>
-        <div class="badge w-full font-bold text-white mb-3 py-3" :class="{'badge-success': room.status==='clean','badge-error': room.status==='dirty','badge-warning': room.status==='cleaning','badge-info': room.status==='occupied'}">
+      <div v-for="room in rooms" :key="room.id" class="card shadow-sm border p-3 text-center transition-all bg-white relative">
+        <div class="badge w-full font-bold text-white mb-2 py-3 uppercase text-xs" 
+             :class="{'badge-success': room.status==='clean','badge-error': room.status==='dirty','badge-warning': room.status==='cleaning','badge-info': room.status==='occupied'}">
           {{ getStatusText(room.status) }}
         </div>
-        <button @click="openCommandModal(room)" class="btn btn-sm btn-outline btn-secondary font-bold">⚡ GESTISCI</button>
+        
+        <h2 class="text-3xl font-black text-gray-800 mb-1">{{ room.number }}</h2>
+        
+        <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mb-2 animate-pulse">
+          🧹 {{ room.current_cleaner }}
+        </p>
+        <p v-else class="text-xs text-gray-300 mb-2">-</p>
+
+        <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full">GESTISCI</button>
       </div>
     </div>
 
     <dialog id="gov_modal" class="modal modal-bottom sm:modal-middle">
       <div class="modal-box bg-white">
-        <h3 class="font-bold text-lg text-center mb-1">Gestione Stanza {{ selectedRoom?.number }}</h3>
+        <h3 class="font-bold text-lg text-center mb-4">Gestione Stanza {{ selectedRoom?.number }}</h3>
         
-        <div class="flex flex-col gap-4 mt-4">
-          <div class="bg-gray-50 p-3 rounded border border-gray-200">
-             <h4 class="text-xs font-bold uppercase text-gray-500 mb-2">🧹 Assegna Pulizia</h4>
-             <div class="flex gap-2">
-               <select v-model="selectedCleaner" class="select select-sm select-bordered w-full">
-                 <option disabled value="">Scegli Staff</option>
-                 <option v-for="s in staff.cleaners" :key="s.id" :value="s.name">{{ s.name }}</option>
-               </select>
-               <button @click="assignTask('Pulizia Prioritaria', selectedCleaner)" class="btn btn-sm btn-error text-white" :disabled="!selectedCleaner">Vai</button>
-             </div>
+        <div class="flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-2">
+             <button @click="setStatus('dirty')" class="btn btn-error text-white btn-sm">DA PULIRE</button>
+             <button @click="setStatus('clean')" class="btn btn-success text-white btn-sm">PULITA</button>
           </div>
-          <div class="bg-gray-50 p-3 rounded border border-gray-200">
-             <h4 class="text-xs font-bold uppercase text-gray-500 mb-2">🔧 Assegna Riparazione</h4>
-             <select v-model="maintenanceType" class="select select-sm select-bordered w-full mb-2">
-               <option>💡 Lampadina Rotta</option><option>📺 TV non va</option><option value="custom">Altro...</option>
-             </select>
-             <input v-if="maintenanceType === 'custom'" v-model="customIssueText" placeholder="Descrivi..." class="input input-sm input-bordered w-full mb-2"/>
-             <div class="flex gap-2">
-                <select v-model="selectedTech" class="select select-sm select-bordered w-full">
-                  <option disabled value="">Scegli Tecnico</option>
-                  <option v-for="m in staff.techs" :key="m.id" :value="m.name">{{ m.name }}</option>
-                </select>
-                <button @click="assignTask(maintenanceType==='custom'?customIssueText:maintenanceType, selectedTech)" class="btn btn-sm btn-warning" :disabled="!selectedTech">Invia</button>
-             </div>
+
+          <div class="divider my-0">ASSEGNA PULIZIA</div>
+
+          <div class="form-control w-full">
+            <label class="label"><span class="label-text font-bold">Scegli Cameriera/e:</span></label>
+            <select v-model="selectedCleaner" class="select select-bordered w-full bg-gray-50">
+              <option disabled selected value="">-- Seleziona Staff --</option>
+              <option v-for="staff in cleanersList" :key="staff.id" :value="staff.name">
+                {{ staff.name }}
+              </option>
+            </select>
           </div>
+          
+          <button @click="assignCleaner" class="btn btn-primary w-full shadow-lg" :disabled="!selectedCleaner">
+            ASSEGNA ORA 🚀
+          </button>
+
         </div>
         <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full">Chiudi</button></form></div>
       </div>
     </dialog>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
 const router = useRouter()
-const rooms = ref([]); const activeIssues = ref([])
+const rooms = ref([])
+const cleanersList = ref([]) // Qui salviamo la lista scaricata
 const hotelId = localStorage.getItem('htlfix_hotel_id')
-const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
-const myName = localStorage.getItem('htlfix_user_name') || 'Gov'
-const selectedRoom = ref(null); const selectedCleaner = ref(''); const selectedTech = ref('')
-const maintenanceType = ref('💡 Lampadina Rotta'); const customIssueText = ref('')
-const staff = reactive({ cleaners: [], techs: [] })
-let pollingInterval = null
+const hotelName = localStorage.getItem('htlfix_hotel_name')
+const selectedRoom = ref(null)
+const selectedCleaner = ref('')
 
-const fetchData = async () => {
-  const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
-  if (r && JSON.stringify(r) !== JSON.stringify(rooms.value)) rooms.value = r
-  const { data: i } = await supabase.from('issues').select('room_number').eq('hotel_id', hotelId).eq('status', 'open')
-  if (i) activeIssues.value = i.map(x => x.room_number)
+// 1. SCARICA LE STANZE
+const fetchRooms = async () => {
+  const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
+  rooms.value = data
 }
 
-const fetchStaffLists = async () => {
-  const { data } = await supabase.from('staff_members').select('*').eq('hotel_id', hotelId)
-  if (data) { staff.cleaners = data.filter(u => u.role === 'staff'); staff.techs = data.filter(u => u.role === 'maintenance') }
+// 2. SCARICA LO STAFF (CAMERIERE) - IL FIX FONDAMENTALE
+const fetchCleaners = async () => {
+  // Scarica solo chi ha ruolo 'staff' (cameriere)
+  const { data } = await supabase.from('staff_members')
+    .select('id, name')
+    .eq('hotel_id', hotelId)
+    .eq('role', 'staff') // Filtra solo le cameriere
+  
+  cleanersList.value = data || []
 }
 
-const assignTask = async (desc, who) => {
-  await supabase.from('issues').insert([{ description: desc, room_number: selectedRoom.value.number, hotel_id: hotelId, status: 'open', assigned_to: who }])
+// 3. CAMBIA STATO
+const setStatus = async (status) => {
+  await supabase.from('rooms').update({ status: status }).eq('id', selectedRoom.value.id)
   document.getElementById('gov_modal').close()
-  alert(`Assegnato a ${who}!`)
-  if(desc.includes('Pulizia')) await supabase.from('rooms').update({ status: 'dirty' }).eq('id', selectedRoom.value.id)
-  fetchData(); selectedCleaner.value = ''; selectedTech.value = ''
+  fetchRooms()
 }
 
-const openCommandModal = (r) => { selectedRoom.value = r; document.getElementById('gov_modal').showModal() }
-const hasIssue = (n) => activeIssues.value.includes(n)
-const getStatusText = (s) => (s==='clean'?'LIBERA':s==='dirty'?'SPORCA':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
-const logout = () => { localStorage.clear(); router.push('/') }
+// 4. ASSEGNA
+const assignCleaner = async () => {
+  if (!selectedCleaner.value) return
+  // Imposta lo stato su 'dirty' (da pulire) e assegna il nome
+  await supabase.from('rooms').update({ 
+    status: 'dirty', 
+    current_cleaner: selectedCleaner.value 
+  }).eq('id', selectedRoom.value.id)
+  
+  document.getElementById('gov_modal').close()
+  fetchRooms() // Aggiorna subito la vista
+  alert(`Assegnato a ${selectedCleaner.value}! Il suo telefono suonerà.`)
+}
 
-onMounted(() => { fetchData(); fetchStaffLists(); pollingInterval = setInterval(fetchData, 1000) })
-onUnmounted(() => clearInterval(pollingInterval))
-</script>
+const openManageModal = (room) => {
+  selectedRoom.value = room
+  selectedCleaner.value = '' // Resetta selezione
+  document.getElementById('gov_modal').showModal
