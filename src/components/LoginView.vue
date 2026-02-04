@@ -1,11 +1,18 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
     <div class="card w-full max-w-md bg-white shadow-xl rounded-xl overflow-hidden">
-      <div class="bg-blue-600 py-8 px-4 text-center flex justify-center">
-        <img src="/logo.png" alt="HTLfix Logo" class="h-24 w-auto drop-shadow-md object-contain" />
-      </div>
-        <h1 class="text-2xl font-black text-white tracking-wider">HTLfix</h1>
-        <p class="text-blue-100 text-xs uppercase">GESTIONALE HOTEL ASSISTANT</p>
+      
+      <div class="bg-blue-600 py-12 px-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
+        <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+           <div class="absolute -top-10 -left-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+           <div class="absolute bottom-0 right-0 w-32 h-32 bg-black rounded-full blur-2xl"></div>
+        </div>
+
+        <img src="/logo.png" alt="HTLfix Logo" class="h-32 w-auto drop-shadow-2xl relative z-10 animate-pulse" />
+
+        <p class="text-blue-100 text-xs font-bold uppercase tracking-[0.4em] mt-4 relative z-10">
+          Gestione Operativa
+        </p>
       </div>
 
       <div class="card-body p-6">
@@ -16,20 +23,24 @@
             <button class="flex-1 pb-2 font-bold text-sm" :class="mode === 'login' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'" @click="mode = 'login'">ACCEDI</button>
             <button class="flex-1 pb-2 font-bold text-sm" :class="mode === 'register' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'" @click="mode = 'register'">NUOVO HOTEL</button>
           </div>
+
           <div class="space-y-3">
-            <input v-model="hotelName" type="text" placeholder="Nome Hotel" class="input input-bordered input-sm w-full" />
-            <input v-model="hotelPass" type="password" placeholder="Password Hotel" class="input input-bordered input-sm w-full" />
-            
-            <div v-if="mode === 'register'" class="bg-blue-50 p-3 rounded border border-blue-100">
-              <p class="text-xs font-bold text-center mb-2 text-blue-800">Crea i PIN Master</p>
-              <div class="grid grid-cols-2 gap-2">
-                <input v-model="pins.admin" placeholder="Admin: 9999" class="input input-xs w-full text-center" maxlength="4"/>
-                <input v-model="pins.reception" placeholder="Rec: 1111" class="input input-xs w-full text-center" maxlength="4"/>
-              </div>
+            <div>
+              <label class="label text-[10px] font-bold text-gray-500 uppercase">Nome Hotel</label>
+              <input v-model="hotelName" type="text" placeholder="Es. Hotel Roma" class="input input-bordered input-sm w-full" />
+            </div>
+            <div>
+              <label class="label text-[10px] font-bold text-gray-500 uppercase">Password Hotel</label>
+              <input v-model="hotelPass" type="password" placeholder="Password segreta" class="input input-bordered input-sm w-full" />
             </div>
 
-            <button v-if="mode === 'login'" @click="loginHotel" class="btn btn-primary w-full btn-sm mt-2" :disabled="loading">{{ loading ? '...' : 'ENTRA' }}</button>
-            <button v-else @click="registerHotel" class="btn btn-secondary w-full btn-sm mt-2" :disabled="loading">{{ loading ? '...' : 'CREA HOTEL' }}</button>
+            <div v-if="mode === 'register'" class="bg-blue-50 p-3 rounded border border-blue-100 text-center">
+              <p class="text-xs text-blue-800">Registrandoti, il tuo <b>PIN Direttore</b> sarà:</p>
+              <p class="text-3xl font-black text-blue-600 my-1 tracking-widest">9999</p>
+            </div>
+
+            <button v-if="mode === 'login'" @click="loginHotel" class="btn btn-primary w-full btn-sm mt-2" :disabled="loading">{{ loading ? '...' : 'ENTRA NELL\'HOTEL' }}</button>
+            <button v-else @click="registerHotel" class="btn btn-secondary w-full btn-sm mt-2" :disabled="loading">{{ loading ? '...' : 'CREA IL TUO HOTEL' }}</button>
           </div>
         </div>
 
@@ -49,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
@@ -58,16 +69,13 @@ const step = ref('hotel-gate')
 const mode = ref('login')
 const loading = ref(false)
 const msg = ref('')
-const hotelName = ref('')
-const hotelPass = ref('')
-const userPin = ref('')
-const pins = reactive({ admin: '9999', reception: '1111' })
+const hotelName = ref(''); const hotelPass = ref(''); const userPin = ref('')
 const currentHotelData = ref(null)
 
 const registerHotel = async () => {
   if (!hotelName.value || !hotelPass.value) { msg.value = 'Compila tutto!'; return }
   loading.value = true
-  const { data, error } = await supabase.from('hotels').insert([{ name: hotelName.value, password: hotelPass.value, admin_pin: pins.admin, reception_pin: pins.reception }]).select()
+  const { data, error } = await supabase.from('hotels').insert([{ name: hotelName.value, password: hotelPass.value }]).select()
   loading.value = false
   if (error) msg.value = 'Nome hotel già esistente.'
   else enterHotel(data[0])
@@ -99,15 +107,12 @@ const loginUser = async () => {
 
   if (staffMember) {
     localStorage.setItem('htlfix_user', staffMember.role)
-    localStorage.setItem('htlfix_user_name', staffMember.name) 
-    
-    // GESTIONE NUOVI RUOLI
+    localStorage.setItem('htlfix_user_name', staffMember.name)
     if (staffMember.role === 'staff') router.push('/staff')
     else if (staffMember.role === 'maintenance') router.push('/manutenzione')
-    else if (staffMember.role === 'governante') router.push('/governante') // <-- ECCOLO
+    else if (staffMember.role === 'governante') router.push('/governante')
   } else {
-    msg.value = 'PIN non valido.'
-    userPin.value = ''
+    msg.value = 'PIN non riconosciuto.'; userPin.value = ''
   }
 }
 </script>

@@ -1,5 +1,11 @@
 <template>
   <div class="min-h-screen bg-purple-50 pb-20">
+    <div v-if="showToast" class="toast toast-top toast-end z-50">
+      <div class="alert alert-warning shadow-lg animate-bounce">
+        <span>🔔 <b>Attenzione:</b> Nuovo Ticket Aperto!</span>
+      </div>
+    </div>
+
     <div class="navbar bg-purple-700 text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
@@ -51,13 +57,33 @@ const rooms = ref([]); const activeIssues = ref([])
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
 const selectedRoom = ref(null); const customIssue = ref('')
+const showToast = ref(false) // Stato per la notifica
+let lastIssueCount = 0 // Memoria dei guasti precedenti
 let pollingInterval = null
+
+// SUONO NOTIFICA (Beep semplice)
+const playSound = () => {
+  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg')
+  audio.play().catch(e => console.log('Audio bloccato dal browser', e))
+}
 
 const fetchData = async () => {
   const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
   if (r && JSON.stringify(r) !== JSON.stringify(rooms.value)) rooms.value = r
+
   const { data: i } = await supabase.from('issues').select('room_number').eq('hotel_id', hotelId).eq('status', 'open')
-  if (i) activeIssues.value = i.map(x => x.room_number)
+  
+  if (i) {
+    const currentCount = i.length
+    // LOGICA NOTIFICA: Se i guasti sono AUMENTATI rispetto a prima -> NOTIFICA
+    if (currentCount > lastIssueCount && lastIssueCount !== 0) {
+      showToast.value = true
+      playSound()
+      setTimeout(() => showToast.value = false, 4000) // Nascondi dopo 4 sec
+    }
+    activeIssues.value = i.map(x => x.room_number)
+    lastIssueCount = currentCount
+  }
 }
 
 const setStatus = async (room, status) => { room.status = status; await supabase.from('rooms').update({ status: status }).eq('id', room.id) }
@@ -67,6 +93,9 @@ const hasIssue = (n) => activeIssues.value.includes(n)
 const getStatusText = (s) => (s==='clean'?'LIBERA':s==='dirty'?'SPORCA':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
 const logout = () => { localStorage.clear(); router.push('/') }
 
-onMounted(() => { fetchData(); pollingInterval = setInterval(fetchData, 1000) })
+onMounted(() => { 
+  fetchData().then(() => { lastIssueCount = activeIssues.value.length }) // Inizializza contatore
+  pollingInterval = setInterval(fetchData, 2000) // Controllo ogni 2 sec
+})
 onUnmounted(() => clearInterval(pollingInterval))
 </script>

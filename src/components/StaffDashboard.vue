@@ -1,5 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 pb-20">
+    
+    <div v-if="showToast" class="toast toast-top toast-center z-50">
+      <div class="alert alert-error shadow-xl border-2 border-white animate-bounce">
+        <span class="text-white font-bold text-lg">🧹 Nuova stanza da pulire!</span>
+      </div>
+    </div>
+
     <div class="navbar bg-blue-600 text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
@@ -20,10 +27,10 @@
           </div>
           <div class="flex gap-2 items-center">
             <button @click="openIssueModal(room)" class="btn btn-circle btn-warning text-white btn-sm shadow-sm">⚠️</button>
-            <button v-if="room.status === 'dirty'" @click="startCleaning(room)" class="btn w-24 bg-red-500 text-white font-bold">INIZIA</button>
-            <button v-else-if="room.status === 'cleaning'" @click="finishCleaning(room)" class="btn w-24 bg-yellow-400 text-black font-bold animate-pulse">FINITO</button>
-            <div v-else-if="room.status === 'clean'" class="btn btn-circle bg-gray-100 text-gray-300">✓</div>
-            <div v-else-if="room.status === 'occupied'" class="btn btn-circle bg-blue-50 text-blue-200">🚫</div>
+            <button v-if="room.status === 'dirty'" @click="startCleaning(room)" class="btn w-24 bg-red-500 hover:bg-red-600 text-white border-none shadow-md font-bold">INIZIA</button>
+            <button v-else-if="room.status === 'cleaning'" @click="finishCleaning(room)" class="btn w-24 bg-yellow-400 hover:bg-yellow-500 text-black border-none shadow-md font-bold animate-pulse">FINITO</button>
+            <div v-else-if="room.status === 'clean'" class="btn btn-circle bg-gray-100 text-gray-300 border-none cursor-default">✓</div>
+            <div v-else-if="room.status === 'occupied'" class="btn btn-circle bg-blue-50 text-blue-200 border-none cursor-default">🚫</div>
           </div>
         </div>
       </div>
@@ -46,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
@@ -56,13 +63,47 @@ const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
 const currentCleanerName = localStorage.getItem('htlfix_user_name') || 'Staff'
 const selectedRoom = ref(null); const customIssue = ref('')
+const showToast = ref(false)
+let lastDirtyCount = 0 // Memoria stanze sporche
+let pollingInterval = null
 
-const fetchRooms = async () => { const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number'); if (data) rooms.value = data }
+// SUONO
+const playSound = () => {
+  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg')
+  audio.play().catch(e => {})
+}
+
+const fetchRooms = async () => { 
+  const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
+  
+  if (data) {
+    // Conta quante sono sporche ADESSO
+    const currentDirty = data.filter(r => r.status === 'dirty').length
+
+    // Se sono AUMENTATE rispetto a prima -> NOTIFICA
+    if (currentDirty > lastDirtyCount && lastDirtyCount !== 0) {
+      showToast.value = true
+      playSound()
+      setTimeout(() => showToast.value = false, 4000)
+    }
+
+    if (JSON.stringify(data) !== JSON.stringify(rooms.value)) {
+      rooms.value = data
+    }
+    lastDirtyCount = currentDirty
+  }
+}
+
 const startCleaning = async (r) => { r.status='cleaning'; await supabase.from('rooms').update({ status: 'cleaning', current_cleaner: currentCleanerName }).eq('id', r.id) }
 const finishCleaning = async (r) => { r.status='clean'; await supabase.from('rooms').update({ status: 'clean' }).eq('id', r.id) }
 const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'DA PULIRE':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
 const reportIssue = async (desc) => { if(!desc) return; await supabase.from('issues').insert([{ description: desc, room_number: selectedRoom.value.number, hotel_id: hotelId, status: 'open' }]); document.getElementById('staff_modal').close(); alert('Inviato!') }
 const openIssueModal = (r) => { selectedRoom.value = r; customIssue.value = ''; document.getElementById('staff_modal').showModal() }
 const logout = () => { localStorage.clear(); router.push('/') }
-onMounted(() => fetchRooms())
+
+onMounted(() => { 
+  fetchRooms().then(() => { lastDirtyCount = rooms.value.filter(r => r.status === 'dirty').length })
+  pollingInterval = setInterval(fetchRooms, 2000) 
+})
+onUnmounted(() => clearInterval(pollingInterval))
 </script>
