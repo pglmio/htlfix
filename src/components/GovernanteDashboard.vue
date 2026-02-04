@@ -21,22 +21,21 @@
     <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
       <div v-for="room in rooms" :key="room.id" class="card shadow-sm border p-3 text-center transition-all bg-white relative overflow-visible">
         
-        <div v-if="hasIssue(room.number)" class="absolute -top-2 -right-2 bg-purple-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-md font-bold text-lg animate-bounce z-10 border-2 border-white">
-          🔧
+        <h2 class="text-3xl font-black text-gray-800 mb-2">{{ room.number }}</h2>
+
+        <div class="badge w-full font-bold text-white py-3 uppercase text-xs mb-1" 
+             :class="getBadgeClass(room.status)">
+          {{ getStatusText(room.status) }}
         </div>
 
-        <div class="badge w-full font-bold text-white mb-2 py-3 uppercase text-xs" 
-             :class="hasIssue(room.number) ? 'bg-purple-600 text-white border-purple-800' : getBadgeClass(room.status)">
-          {{ hasIssue(room.number) ? '⚠️ MANUTENZIONE' : getStatusText(room.status) }}
+        <div v-if="hasIssue(room.number)" class="badge w-full font-bold text-white py-3 uppercase text-[10px] bg-purple-600 animate-pulse border-purple-800 shadow-md">
+          🔧 IN MANUTENZIONE
         </div>
         
-        <h2 class="text-3xl font-black text-gray-800 mb-1">{{ room.number }}</h2>
-        
-        <p v-if="!hasIssue(room.number) && room.current_cleaner" class="text-xs text-pink-600 font-bold mb-2 truncate">🧹 {{ room.current_cleaner }}</p>
-        <p v-else-if="hasIssue(room.number)" class="text-xs text-purple-600 font-bold mb-2">Tecnico Avvisato</p>
-        <p v-else class="text-xs text-gray-300 mb-2">-</p>
+        <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mt-2 truncate">🧹 {{ room.current_cleaner }}</p>
+        <p v-else class="mt-2 text-xs text-gray-300">-</p>
 
-        <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full">GESTISCI</button>
+        <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full mt-2">GESTISCI</button>
       </div>
     </div>
 
@@ -110,10 +109,12 @@ const fetchData = async () => {
   techList.value = s?.filter(m => m.role === 'maintenance') || []
 
   const { data: i } = await supabase.from('issues').select('room_number').eq('hotel_id', hotelId).eq('status', 'open')
-  if (i) activeIssues.value = i.map(ticket => ticket.room_number)
+  // Sempre String() per sicurezza
+  if (i) activeIssues.value = i.map(ticket => String(ticket.room_number))
+  else activeIssues.value = []
 }
 
-const hasIssue = (roomNumber) => activeIssues.value.includes(roomNumber)
+const hasIssue = (roomNumber) => activeIssues.value.includes(String(roomNumber))
 
 const assignCleaner = async () => {
   await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id)
@@ -123,7 +124,7 @@ const assignCleaner = async () => {
 const assignTechIssue = async () => {
   await supabase.from('issues').insert([{ 
     description: issueDesc.value, 
-    room_number: selectedRoom.value.number, 
+    room_number: String(selectedRoom.value.number), 
     hotel_id: hotelId, 
     status: 'open',
     assigned_to: selectedTech.value 
@@ -137,7 +138,6 @@ const assignTechIssue = async () => {
 const setStatus = async (s) => { await supabase.from('rooms').update({ status: s }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchData() }
 const openManageModal = (r) => { selectedRoom.value = r; selectedCleaner.value = ''; selectedTech.value = ''; issueDesc.value = ''; document.getElementById('gov_modal').showModal() }
 
-// NUOVE FUNZIONI PER I COLORI E TESTI
 const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'SPORCA':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
 const getBadgeClass = (s) => {
   if (s==='clean') return 'badge-success'
