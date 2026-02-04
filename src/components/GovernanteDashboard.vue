@@ -19,13 +19,22 @@
     </div>
 
     <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div v-for="room in rooms" :key="room.id" class="card shadow-sm border p-3 text-center transition-all bg-white relative">
+      <div v-for="room in rooms" :key="room.id" class="card shadow-sm border p-3 text-center transition-all bg-white relative overflow-visible">
+        
+        <div v-if="hasIssue(room.number)" class="absolute -top-2 -right-2 bg-orange-500 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-md font-bold text-lg animate-bounce z-10 border-2 border-white" title="Guasto in corso">
+          🔧
+        </div>
+
         <div class="badge w-full font-bold text-white mb-2 py-3 uppercase text-xs" 
              :class="{'badge-success': room.status==='clean','badge-error': room.status==='dirty','badge-warning': room.status==='cleaning','badge-info': room.status==='occupied'}">
           {{ getStatusText(room.status) }}
         </div>
+        
         <h2 class="text-3xl font-black text-gray-800 mb-1">{{ room.number }}</h2>
+        
         <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mb-2 truncate">🧹 {{ room.current_cleaner }}</p>
+        <p v-else class="text-xs text-gray-300 mb-2">-</p>
+
         <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full">GESTISCI</button>
       </div>
     </div>
@@ -48,13 +57,18 @@
 
           <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
             <h4 class="text-xs font-black text-orange-800 uppercase mb-3">🔧 Assegna Guasto</h4>
-            <input v-model="issueDesc" type="text" placeholder="Cosa è rotto?" class="input input-bordered input-sm w-full mb-2 bg-white" />
+            
+            <div v-if="hasIssue(selectedRoom?.number)" class="alert alert-warning py-2 mb-2 text-xs font-bold shadow-sm">
+              <span>⚠️ C'è già un ticket aperto per questa stanza!</span>
+            </div>
+
+            <input v-model="issueDesc" type="text" placeholder="Descrivi il problema..." class="input input-bordered input-sm w-full mb-2 bg-white" />
             <div class="flex gap-2">
               <select v-model="selectedTech" class="select select-bordered select-sm flex-1 bg-white">
                 <option disabled value="">Manutentore...</option>
                 <option v-for="t in techList" :key="t.id" :value="t.name">{{ t.name }}</option>
               </select>
-              <button @click="assignTechIssue" class="btn btn-warning btn-sm text-white" :disabled="!selectedTech || !issueDesc">OK</button>
+              <button @click="assignTechIssue" class="btn btn-warning btn-sm text-white" :disabled="!selectedTech || !issueDesc">INVIA 🔧</button>
             </div>
           </div>
 
@@ -77,6 +91,7 @@ import { supabase } from '../supabase'
 
 const router = useRouter()
 const rooms = ref([]); const cleanersList = ref([]); const techList = ref([])
+const activeIssues = ref([]) // QUI SALVIAMO I NUMERI DELLE STANZE CON GUASTI
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name')
 const selectedRoom = ref(null); const selectedCleaner = ref(''); const selectedTech = ref(''); const issueDesc = ref('')
@@ -86,12 +101,24 @@ const playPop = () => { new Audio('https://actions.google.com/sounds/v1/cartoon/
 const enableAudio = () => { audioEnabled.value = true; playPop() }
 
 const fetchData = async () => {
+  // 1. Scarica Stanze
   const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
   rooms.value = r || []
+
+  // 2. Scarica Staff
   const { data: s } = await supabase.from('staff_members').select('*').eq('hotel_id', hotelId)
   cleanersList.value = s?.filter(m => m.role === 'staff') || []
   techList.value = s?.filter(m => m.role === 'maintenance') || []
+
+  // 3. Scarica GUASTI ATTIVI (Solo quelli 'open')
+  const { data: i } = await supabase.from('issues').select('room_number').eq('hotel_id', hotelId).eq('status', 'open')
+  if (i) {
+    activeIssues.value = i.map(ticket => ticket.room_number)
+  }
 }
+
+// Funzione per controllare se la stanza ha un problema
+const hasIssue = (roomNumber) => activeIssues.value.includes(roomNumber)
 
 const assignCleaner = async () => {
   await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id)
@@ -106,7 +133,10 @@ const assignTechIssue = async () => {
     status: 'open',
     assigned_to: selectedTech.value 
   }])
-  alert('Guasto inviato a ' + selectedTech.value); issueDesc.value = ''; document.getElementById('gov_modal').close()
+  alert('Guasto inviato a ' + selectedTech.value + '! Apparirà il bollino 🔧'); 
+  issueDesc.value = ''; 
+  document.getElementById('gov_modal').close()
+  fetchData() // Aggiorna subito per far apparire il bollino
 }
 
 const setStatus = async (s) => { await supabase.from('rooms').update({ status: s }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchData() }
