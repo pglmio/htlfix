@@ -8,10 +8,10 @@
            <div class="absolute bottom-0 right-0 w-32 h-32 bg-black rounded-full blur-2xl"></div>
         </div>
 
-        <img src="/logo.png" alt="HTLfix Logo" class="h-32 w-auto drop-shadow-2xl relative z-10 animate-pulse" />
+        <img src="/logo.png" alt="HTLfix Logo" class="h-32 w-auto drop-shadow-2xl relative z-10 animate-pulse rounded-3xl" />
 
-        <p class="text-blue-100 text-xs font-bold uppercase tracking-[0.4em] mt-4 relative z-10">
-          Gestione Operativa
+        <p class="text-blue-100 text-xs font-bold uppercase tracking-[0.2em] mt-4 relative z-10">
+          HTLfix HOTEL ASSISTANT
         </p>
       </div>
 
