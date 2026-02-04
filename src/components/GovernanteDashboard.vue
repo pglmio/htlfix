@@ -4,7 +4,7 @@
     <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-pink-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
       <div class="text-6xl mb-6 animate-pulse">🗝️</div>
       <h2 class="text-3xl font-black mb-2">GOVERNANTE</h2>
-      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per iniziare.</p>
+      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per gestire lo staff e le stanze.</p>
       <button @click="enableAudio" class="btn btn-white text-pink-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
         INIZIA TURNO
       </button>
@@ -14,7 +14,6 @@
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
         <span class="font-black text-xl">GOVERNANTE</span>
-        <span class="text-[10px] bg-pink-800 px-2 py-1 rounded text-white mt-1">Capo Servizio 🗝️</span>
       </div>
       <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
     </div>
@@ -26,37 +25,46 @@
           {{ getStatusText(room.status) }}
         </div>
         <h2 class="text-3xl font-black text-gray-800 mb-1">{{ room.number }}</h2>
-        <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mb-2 animate-pulse">
-          🧹 {{ room.current_cleaner }}
-        </p>
-        <p v-else class="text-xs text-gray-300 mb-2">-</p>
+        <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mb-2 truncate">🧹 {{ room.current_cleaner }}</p>
         <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full">GESTISCI</button>
       </div>
     </div>
 
     <dialog id="gov_modal" class="modal modal-bottom sm:modal-middle">
       <div class="modal-box bg-white">
-        <h3 class="font-bold text-lg text-center mb-4">Gestione Stanza {{ selectedRoom?.number }}</h3>
+        <h3 class="font-bold text-lg text-center mb-4 uppercase">Stanza {{ selectedRoom?.number }}</h3>
+        
         <div class="flex flex-col gap-4">
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <h4 class="text-xs font-black text-blue-800 uppercase mb-3">🧹 Assegna Pulizia</h4>
+            <div class="flex gap-2">
+              <select v-model="selectedCleaner" class="select select-bordered select-sm flex-1 bg-white">
+                <option disabled value="">Staff Pulizie...</option>
+                <option v-for="c in cleanersList" :key="c.id" :value="c.name">{{ c.name }}</option>
+              </select>
+              <button @click="assignCleaner" class="btn btn-primary btn-sm" :disabled="!selectedCleaner">OK</button>
+            </div>
+          </div>
+
+          <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
+            <h4 class="text-xs font-black text-orange-800 uppercase mb-3">🔧 Assegna Guasto</h4>
+            <input v-model="issueDesc" type="text" placeholder="Cosa è rotto?" class="input input-bordered input-sm w-full mb-2 bg-white" />
+            <div class="flex gap-2">
+              <select v-model="selectedTech" class="select select-bordered select-sm flex-1 bg-white">
+                <option disabled value="">Manutentore...</option>
+                <option v-for="t in techList" :key="t.id" :value="t.name">{{ t.name }}</option>
+              </select>
+              <button @click="assignTechIssue" class="btn btn-warning btn-sm text-white" :disabled="!selectedTech || !issueDesc">OK</button>
+            </div>
+          </div>
+
+          <div class="divider">STATO RAPIDO</div>
           <div class="grid grid-cols-2 gap-2">
-             <button @click="setStatus('dirty')" class="btn btn-error text-white btn-sm">DA PULIRE</button>
-             <button @click="setStatus('clean')" class="btn btn-success text-white btn-sm">PULITA</button>
+             <button @click="setStatus('dirty')" class="btn btn-error btn-outline btn-sm">DIRTY</button>
+             <button @click="setStatus('clean')" class="btn btn-success btn-outline btn-sm">CLEAN</button>
           </div>
-          <div class="divider my-0">ASSEGNA PULIZIA</div>
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text font-bold">Scegli Cameriera/e:</span></label>
-            <select v-model="selectedCleaner" class="select select-bordered w-full bg-gray-50">
-              <option disabled selected value="">-- Seleziona Staff --</option>
-              <option v-for="staff in cleanersList" :key="staff.id" :value="staff.name">
-                {{ staff.name }}
-              </option>
-            </select>
-          </div>
-          <button @click="assignCleaner" class="btn btn-primary w-full shadow-lg" :disabled="!selectedCleaner">
-            ASSEGNA ORA 🚀
-          </button>
         </div>
-        <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full">Chiudi</button></form></div>
+        <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full uppercase font-bold text-xs">Chiudi</button></form></div>
       </div>
     </dialog>
   </div>
@@ -68,32 +76,43 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
 const router = useRouter()
-const rooms = ref([]); const cleanersList = ref([])
+const rooms = ref([]); const cleanersList = ref([]); const techList = ref([])
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name')
-const selectedRoom = ref(null); const selectedCleaner = ref('')
+const selectedRoom = ref(null); const selectedCleaner = ref(''); const selectedTech = ref(''); const issueDesc = ref('')
 const audioEnabled = ref(false)
 
-const playStartSound = () => {
-  const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg')
-  audio.volume = 0.5
-  audio.play().catch(e => {})
-}
-const enableAudio = () => { audioEnabled.value = true; playStartSound() }
+const playPop = () => { new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg').play().catch(e => {}) }
+const enableAudio = () => { audioEnabled.value = true; playPop() }
 
-const fetchRooms = async () => {
-  const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
-  rooms.value = data
+const fetchData = async () => {
+  const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
+  rooms.value = r || []
+  const { data: s } = await supabase.from('staff_members').select('*').eq('hotel_id', hotelId)
+  cleanersList.value = s?.filter(m => m.role === 'staff') || []
+  techList.value = s?.filter(m => m.role === 'maintenance') || []
 }
-const fetchCleaners = async () => {
-  const { data } = await supabase.from('staff_members').select('id, name').eq('hotel_id', hotelId).eq('role', 'staff')
-  cleanersList.value = data || []
+
+const assignCleaner = async () => {
+  await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id)
+  document.getElementById('gov_modal').close(); fetchData()
 }
-const setStatus = async (status) => { await supabase.from('rooms').update({ status: status }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchRooms() }
-const assignCleaner = async () => { if (!selectedCleaner.value) return; await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchRooms() }
-const openManageModal = (room) => { selectedRoom.value = room; selectedCleaner.value = ''; document.getElementById('gov_modal').showModal() }
-const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'DA PULIRE':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
+
+const assignTechIssue = async () => {
+  await supabase.from('issues').insert([{ 
+    description: issueDesc.value, 
+    room_number: selectedRoom.value.number, 
+    hotel_id: hotelId, 
+    status: 'open',
+    assigned_to: selectedTech.value 
+  }])
+  alert('Guasto inviato a ' + selectedTech.value); issueDesc.value = ''; document.getElementById('gov_modal').close()
+}
+
+const setStatus = async (s) => { await supabase.from('rooms').update({ status: s }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchData() }
+const openManageModal = (r) => { selectedRoom.value = r; selectedCleaner.value = ''; selectedTech.value = ''; issueDesc.value = ''; document.getElementById('gov_modal').showModal() }
+const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'SPORCA':s==='cleaning'?'PULIZIA':'OCCUPATA')
 const logout = () => { localStorage.clear(); router.push('/') }
 
-onMounted(() => { fetchRooms(); fetchCleaners(); setInterval(fetchRooms, 2000) })
+onMounted(() => { fetchData(); setInterval(fetchData, 3000) })
 </script>
