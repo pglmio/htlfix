@@ -100,17 +100,24 @@ const loginUser = async () => {
   const h = currentHotelData.value
   localStorage.setItem('htlfix_hotel_name', h.name) 
 
+  // 1. Controlla PIN Speciali (Direttore o vecchio Reception generico)
   if (pin === h.admin_pin) { localStorage.setItem('htlfix_user', 'admin'); router.push('/admin'); return } 
+  // Manteniamo questo per compatibilità, ma ora useremo i PIN personali
   if (pin === h.reception_pin) { localStorage.setItem('htlfix_user', 'reception'); router.push('/reception'); return }
 
+  // 2. Cerca nello STAFF (Marco, Chiara, Luigi, ecc.)
   const { data: staffMember } = await supabase.from('staff_members').select('*').eq('hotel_id', h.id).eq('pin', pin).single()
 
   if (staffMember) {
     localStorage.setItem('htlfix_user', staffMember.role)
     localStorage.setItem('htlfix_user_name', staffMember.name)
+    
+    // IL PEZZO CHE MANCAVA ERA QUI SOTTO:
     if (staffMember.role === 'staff') router.push('/staff')
     else if (staffMember.role === 'maintenance') router.push('/manutenzione')
     else if (staffMember.role === 'governante') router.push('/governante')
+    else if (staffMember.role === 'reception') router.push('/reception') // <--- ECCOLO!
+    
   } else {
     msg.value = 'PIN non riconosciuto.'; userPin.value = ''
   }
