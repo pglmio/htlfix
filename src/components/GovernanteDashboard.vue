@@ -4,7 +4,7 @@
     <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-pink-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
       <div class="text-6xl mb-6 animate-pulse">🗝️</div>
       <h2 class="text-3xl font-black mb-2">GOVERNANTE</h2>
-      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per gestire lo staff e le stanze.</p>
+      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per iniziare.</p>
       <button @click="enableAudio" class="btn btn-white text-pink-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
         INIZIA TURNO
       </button>
@@ -25,14 +25,11 @@
              :class="{'badge-success': room.status==='clean','badge-error': room.status==='dirty','badge-warning': room.status==='cleaning','badge-info': room.status==='occupied'}">
           {{ getStatusText(room.status) }}
         </div>
-        
         <h2 class="text-3xl font-black text-gray-800 mb-1">{{ room.number }}</h2>
-        
         <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mb-2 animate-pulse">
           🧹 {{ room.current_cleaner }}
         </p>
         <p v-else class="text-xs text-gray-300 mb-2">-</p>
-
         <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full">GESTISCI</button>
       </div>
     </div>
@@ -40,15 +37,12 @@
     <dialog id="gov_modal" class="modal modal-bottom sm:modal-middle">
       <div class="modal-box bg-white">
         <h3 class="font-bold text-lg text-center mb-4">Gestione Stanza {{ selectedRoom?.number }}</h3>
-        
         <div class="flex flex-col gap-4">
           <div class="grid grid-cols-2 gap-2">
              <button @click="setStatus('dirty')" class="btn btn-error text-white btn-sm">DA PULIRE</button>
              <button @click="setStatus('clean')" class="btn btn-success text-white btn-sm">PULITA</button>
           </div>
-
           <div class="divider my-0">ASSEGNA PULIZIA</div>
-
           <div class="form-control w-full">
             <label class="label"><span class="label-text font-bold">Scegli Cameriera/e:</span></label>
             <select v-model="selectedCleaner" class="select select-bordered w-full bg-gray-50">
@@ -58,7 +52,6 @@
               </option>
             </select>
           </div>
-          
           <button @click="assignCleaner" class="btn btn-primary w-full shadow-lg" :disabled="!selectedCleaner">
             ASSEGNA ORA 🚀
           </button>
@@ -75,57 +68,32 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
 const router = useRouter()
-const rooms = ref([])
-const cleanersList = ref([])
+const rooms = ref([]); const cleanersList = ref([])
 const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name')
-const selectedRoom = ref(null)
-const selectedCleaner = ref('')
+const selectedRoom = ref(null); const selectedCleaner = ref('')
 const audioEnabled = ref(false)
 
-const playSound = () => {
-  if(!audioEnabled.value) return
-  const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3')
+const playStartSound = () => {
+  const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg')
+  audio.volume = 0.5
   audio.play().catch(e => {})
 }
-const enableAudio = () => { audioEnabled.value = true; playSound() }
+const enableAudio = () => { audioEnabled.value = true; playStartSound() }
 
 const fetchRooms = async () => {
   const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
   rooms.value = data
 }
-
 const fetchCleaners = async () => {
   const { data } = await supabase.from('staff_members').select('id, name').eq('hotel_id', hotelId).eq('role', 'staff')
   cleanersList.value = data || []
 }
-
-const setStatus = async (status) => {
-  await supabase.from('rooms').update({ status: status }).eq('id', selectedRoom.value.id)
-  document.getElementById('gov_modal').close()
-  fetchRooms()
-}
-
-const assignCleaner = async () => {
-  if (!selectedCleaner.value) return
-  await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id)
-  document.getElementById('gov_modal').close()
-  fetchRooms()
-  alert(`Assegnato a ${selectedCleaner.value}! Il suo telefono suonerà.`)
-}
-
-const openManageModal = (room) => {
-  selectedRoom.value = room
-  selectedCleaner.value = ''
-  document.getElementById('gov_modal').showModal()
-}
-
+const setStatus = async (status) => { await supabase.from('rooms').update({ status: status }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchRooms() }
+const assignCleaner = async () => { if (!selectedCleaner.value) return; await supabase.from('rooms').update({ status: 'dirty', current_cleaner: selectedCleaner.value }).eq('id', selectedRoom.value.id); document.getElementById('gov_modal').close(); fetchRooms() }
+const openManageModal = (room) => { selectedRoom.value = room; selectedCleaner.value = ''; document.getElementById('gov_modal').showModal() }
 const getStatusText = (s) => (s==='clean'?'PULITA':s==='dirty'?'DA PULIRE':s==='cleaning'?'IN PULIZIA':'OCCUPATA')
 const logout = () => { localStorage.clear(); router.push('/') }
 
-onMounted(() => {
-  fetchRooms()
-  fetchCleaners()
-  setInterval(fetchRooms, 2000)
-})
+onMounted(() => { fetchRooms(); fetchCleaners(); setInterval(fetchRooms, 2000) })
 </script>

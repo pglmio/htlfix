@@ -2,17 +2,17 @@
   <div class="min-h-screen bg-orange-50 pb-20 relative">
     
     <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-orange-600/90 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
-      <div class="text-6xl mb-4">🔇 ➔ 🔊</div>
-      <h2 class="text-3xl font-black mb-2">ATTIVA IL SONORO</h2>
-      <p class="mb-8 font-bold opacity-80">Per ricevere le notifiche dei guasti, devi cliccare qui sotto.</p>
+      <div class="text-6xl mb-4">🔧</div>
+      <h2 class="text-3xl font-black mb-2">MANUTENZIONE</h2>
+      <p class="mb-8 font-bold opacity-80">Clicca per attivare le notifiche.</p>
       <button @click="enableAudio" class="btn btn-white text-orange-600 font-black btn-lg shadow-xl animate-bounce">
-        INIZIA TURNO 🔧
+        INIZIA TURNO
       </button>
     </div>
 
     <div v-if="showToast" class="toast toast-top toast-center z-50">
       <div class="alert alert-info shadow-xl border-4 border-white animate-bounce">
-        <span class="text-white font-black text-2xl">🚨 NUOVO GUASTO!</span>
+        <span class="text-white font-black text-2xl">🚨 GUASTO!</span>
       </div>
     </div>
 
@@ -30,7 +30,7 @@
 
     <div class="p-4">
       <h2 class="font-bold text-gray-500 mb-4 uppercase text-sm flex justify-between items-center">
-        Lista Interventi <span class="badge badge-neutral text-xs animate-pulse">LIVE</span>
+        Ticket Aperti <span class="badge badge-neutral text-xs animate-pulse">LIVE</span>
       </h2>
 
       <div v-if="issues.length === 0" class="text-center opacity-40 mt-10">
@@ -71,52 +71,36 @@ const hotelId = localStorage.getItem('htlfix_hotel_id')
 const hotelName = localStorage.getItem('htlfix_hotel_name') || 'HOTEL'
 const myName = localStorage.getItem('htlfix_user_name') || 'Tecnico'
 const showToast = ref(false)
-const audioEnabled = ref(false) // Blocchiamo tutto finché non è true
-
-// Usiamo una REF per la memoria, è più sicura
+const audioEnabled = ref(false)
 const lastCount = ref(-1) 
 let pollingInterval = null
 
-// SUONO FORTE (Campanello)
-const playSound = () => {
-  if (!audioEnabled.value) return
-  // Link a un suono "Ding Dong" più udibile
-  const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3')
-  audio.volume = 1.0 // Volume massimo
-  audio.play().catch(e => console.log('Errore Audio:', e))
+const playStartSound = () => {
+  const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg')
+  audio.volume = 0.5
+  audio.play().catch(e => {})
 }
 
-const enableAudio = () => {
-  audioEnabled.value = true
-  // Suona subito per testare e sbloccare il browser
-  playSound()
+const playNotifySound = () => {
+  if (!audioEnabled.value) return
+  // BIP CORTO
+  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg')
+  audio.play().catch(e => {})
 }
+
+const enableAudio = () => { audioEnabled.value = true; playStartSound() }
 
 const fetchIssues = async () => {
-  const { data } = await supabase.from('issues')
-    .select('*')
-    .eq('hotel_id', hotelId)
-    .eq('status', 'open')
-    .order('created_at', { ascending: false })
+  const { data } = await supabase.from('issues').select('*').eq('hotel_id', hotelId).eq('status', 'open').order('created_at', { ascending: false })
   
   if (data) {
     const currentQty = data.length
-
-    // LOGICA MIGLIORATA:
-    // Se lastCount è -1, significa che è il PRIMO caricamento -> Niente suono (solo sync)
-    // Se lastCount è >= 0 E i nuovi sono di più -> SUONO
     if (lastCount.value !== -1 && currentQty > lastCount.value) {
-      console.log("NUOVO TICKET RILEVATO! SUONO!")
       showToast.value = true
-      playSound()
-      setTimeout(() => showToast.value = false, 5000)
+      playNotifySound() // SUONA IL BIP
+      setTimeout(() => showToast.value = false, 4000)
     }
-
-    if (JSON.stringify(data) !== JSON.stringify(issues.value)) {
-      issues.value = data
-    }
-    
-    // Aggiorna la memoria
+    if (JSON.stringify(data) !== JSON.stringify(issues.value)) issues.value = data
     lastCount.value = currentQty
   }
 }

@@ -4,7 +4,7 @@
     <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-blue-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
       <div class="text-6xl mb-6 animate-pulse">🧹</div>
       <h2 class="text-3xl font-black mb-2">HOUSEKEEPING</h2>
-      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Ciao {{ currentCleanerName }}! Clicca per iniziare il turno.</p>
+      <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Ciao {{ currentCleanerName }}! Inizia il turno.</p>
       <button @click="enableAudio" class="btn btn-white text-blue-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
         INIZIA TURNO
       </button>
@@ -77,29 +77,32 @@ const audioEnabled = ref(false)
 const lastDirtyCount = ref(-1)
 let pollingInterval = null
 
-const playSound = () => {
-  if(!audioEnabled.value) return
-  const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3')
+const playStartSound = () => {
+  const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg')
+  audio.volume = 0.5
   audio.play().catch(e => {})
 }
 
-const enableAudio = () => { audioEnabled.value = true; playSound() }
+const playNotifySound = () => {
+  if(!audioEnabled.value) return
+  // BIP CORTO
+  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg')
+  audio.play().catch(e => {})
+}
+
+const enableAudio = () => { audioEnabled.value = true; playStartSound() }
 
 const fetchRooms = async () => { 
   const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
   
   if (data) {
     const currentDirty = data.filter(r => r.status === 'dirty').length
-
     if (lastDirtyCount.value !== -1 && currentDirty > lastDirtyCount.value) {
       showToast.value = true
-      playSound()
+      playNotifySound() // SUONA
       setTimeout(() => showToast.value = false, 4000)
     }
-
-    if (JSON.stringify(data) !== JSON.stringify(rooms.value)) {
-      rooms.value = data
-    }
+    if (JSON.stringify(data) !== JSON.stringify(rooms.value)) rooms.value = data
     lastDirtyCount.value = currentDirty
   }
 }
