@@ -41,7 +41,7 @@
         </p>
 
         <div class="mt-8 pt-6 border-t border-white/10">
-          <button @click="$emit('enter-app')" class="text-sm text-gray-300 hover:text-white font-medium underline decoration-gray-600 underline-offset-4 transition">
+          <button @click="router.push('/login')" class="text-sm text-gray-300 hover:text-white font-medium underline decoration-gray-600 underline-offset-4 transition">
             Ho già ricevuto il codice? Entra qui
           </button>
         </div>
@@ -85,7 +85,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router' // 1. Importiamo il router
 
+const router = useRouter() // 2. Attiviamo il router
 const activeModal = ref(null)
 
 const getTitle = (type) => {
@@ -95,8 +97,6 @@ const getTitle = (type) => {
 }
 
 const goToStripe = () => {
-  // ⚠️ IMPORTANTE: INCOLLA QUI SOTTO IL TUO LINK VERO DI STRIPE
-  // Altrimenti vedrai l'errore "AccessDenied"
   window.location.href = 'https://buy.stripe.com/test_6oU7sL2rl0xbe4q8aefnO00'
 }
 </script>
