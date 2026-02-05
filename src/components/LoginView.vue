@@ -1,5 +1,10 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+  <div class="min-h-screen flex items-center justify-center bg-gray-900 px-4 relative">
+    
+    <button @click="resetApp" class="fixed top-4 right-4 btn btn-xs btn-error z-50 opacity-70 hover:opacity-100 font-bold text-white">
+      🔄 RESET APP
+    </button>
+
     <div class="card w-full max-w-md bg-white shadow-xl min-h-screen md:min-h-[600px] overflow-hidden">
       
       <div class="bg-[#707eff] py-10 px-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
@@ -99,7 +104,15 @@ const newHotelPass = ref('')
 const userPin = ref('')
 const currentHotelData = ref(null)
 
-// --- REGISTRAZIONE NUOVO HOTEL (CON BLOCCO CODICE USATO) ---
+// --- FUNZIONE RESET APP (NUOVA) ---
+const resetApp = () => {
+    if(confirm("Vuoi resettare l'app e pulire la cache?")) {
+        localStorage.clear();
+        window.location.reload();
+    }
+}
+
+// --- REGISTRAZIONE ---
 const handleFullRegistration = async () => {
   if (!inviteCode.value || !newHotelName.value || !newHotelPass.value) {
     showMsg('Compila tutti i campi.', 'error'); return;
@@ -110,52 +123,36 @@ const handleFullRegistration = async () => {
   const cleanCode = inviteCode.value.trim().toUpperCase()
 
   try {
-    // 1. CONTROLLO RIGOROSO DEL CODICE
-    // Cerchiamo SOLO codici non usati (is_used = false)
-    const { data: codeData, error: codeError } = await supabase
-      .from('access_codes')
-      .select('*')
-      .eq('code', cleanCode)
-      .single()
+    const { data: codeData, error: codeError } = await supabase.from('access_codes').select('*').eq('code', cleanCode).single()
 
-    if (codeError || !codeData) throw new Error("Codice non trovato o errore di connessione.")
-    
-    // Doppio controllo di sicurezza
-    if (codeData.is_used === true) throw new Error("Questo codice è GIÀ stato utilizzato!")
+    if (codeError || !codeData) throw new Error("Codice non trovato.")
+    if (codeData.is_used === true) throw new Error("Codice GIÀ utilizzato!")
 
-    // 2. Crea l'Hotel
-    const { data: hotelData, error: hotelError } = await supabase
-      .from('hotels')
-      .insert([{ name: newHotelName.value, password: newHotelPass.value }])
-      .select()
-      .single()
+    // Crea Hotel
+    const { data: hotelData, error: hotelError } = await supabase.from('hotels').insert([{ name: newHotelName.value, password: newHotelPass.value }]).select().single()
 
     if (hotelError) {
-      if (hotelError.code === '23505') throw new Error("Esiste già un hotel con questo nome.")
+      if (hotelError.code === '23505') throw new Error("Nome hotel già esistente.")
       throw hotelError
     }
 
-    // 3. BRUCIA IL CODICE IMMEDIATAMENTE
-    const { error: updateError } = await supabase
-      .from('access_codes')
-      .update({ is_used: true, hotel_id: hotelData.id, used_at: new Date() })
-      .eq('id', codeData.id)
-    
-    if (updateError) console.error("Errore aggiornamento codice:", updateError)
+    // Brucia codice
+    await supabase.from('access_codes').update({ is_used: true, hotel_id: hotelData.id, used_at: new Date() }).eq('id', codeData.id)
 
-    // 4. CREA IL DIRETTORE (9999)
-    const { error: staffError } = await supabase
-      .from('staff_members')
-      .insert([{
+    // Crea Direttore
+    const { error: staffError } = await supabase.from('staff_members').insert([{
         hotel_id: hotelData.id,
         name: 'Direttore',
         role: 'admin',
-        pin: '9999'
-      }])
+        pin: '9999' // Assicurati che su Supabase PIN sia di tipo TEXT
+    }])
     
     if (staffError) throw staffError
 
     showMsg('Hotel creato! Usa il PIN 9999.', 'success')
+    
+    // Pulizia preventiva
+    localStorage.clear() 
     enterHotel(hotelData)
 
   } catch (err) {
@@ -168,16 +165,14 @@ const handleFullRegistration = async () => {
 
 // --- LOGIN HOTEL ---
 const loginHotel = async () => {
-  if(!hotelName.value || !hotelPass.value) { showMsg('Inserisci dati hotel', 'error'); return }
+  if(!hotelName.value || !hotelPass.value) { showMsg('Dati mancanti', 'error'); return }
   loading.value = true; msg.value = ''
+  
+  // Pulizia preventiva per evitare fantasmi
+  localStorage.clear()
+
   try {
-    const { data, error } = await supabase
-      .from('hotels')
-      .select('*')
-      .eq('name', hotelName.value)
-      .eq('password', hotelPass.value)
-      .single()
-    
+    const { data, error } = await supabase.from('hotels').select('*').eq('name', hotelName.value).eq('password', hotelPass.value).single()
     if (error || !data) throw new Error('Credenziali hotel errate.')
     enterHotel(data)
   } catch (e) {
@@ -187,45 +182,36 @@ const loginHotel = async () => {
   }
 }
 
-// --- LOGIN UTENTE (PIN) ---
+// --- LOGIN PIN ---
 const loginUser = async () => {
   if (!userPin.value) return
   loading.value = true
   const h = currentHotelData.value
   
   try {
-    console.log(`Cerco utente in hotel ID: ${h.id} con PIN: ${userPin.value}`)
-
     const { data: staffMember, error } = await supabase
       .from('staff_members')
       .select('*')
       .eq('hotel_id', h.id)
-      .eq('pin', userPin.value) // Assicurati che su Supabase il PIN sia testo (text/varchar)
+      .eq('pin', userPin.value)
       .single()
 
-    if (error) {
-      console.error("Errore Supabase:", error)
-      throw new Error('Errore di connessione o PIN errato.')
-    }
+    if (error || !staffMember) throw new Error('PIN errato.')
 
-    if (!staffMember) throw new Error('PIN non trovato.')
-
-    // Salva sessione
     localStorage.setItem('htlfix_hotel_id', h.id)
     localStorage.setItem('htlfix_hotel_name', h.name) 
     localStorage.setItem('htlfix_user_role', staffMember.role)
     localStorage.setItem('htlfix_user_name', staffMember.name)
 
-    // Redirect
+    // Router Push
     if (staffMember.role === 'admin') router.push('/admin')
     else if (staffMember.role === 'reception') router.push('/reception')
     else if (staffMember.role === 'staff') router.push('/staff')
     else if (staffMember.role === 'maintenance') router.push('/manutenzione')
     else if (staffMember.role === 'governante') router.push('/governante')
-    else throw new Error('Ruolo sconosciuto.')
 
   } catch (e) {
-    showMsg(e.message, 'error')
+    showMsg('PIN errato.', 'error')
     userPin.value = ''
   } finally {
     loading.value = false

@@ -1,15 +1,13 @@
 <template>
-  <WelcomePay v-if="showWelcome" @enter-app="showWelcome = false" />
-
-  <LoginView v-else />
+  <router-view />
 </template>
 
-<script setup>
-import { ref } from 'vue'
-// Assicurati che i percorsi siano corretti (src/components/...)
-import LoginView from './components/LoginView.vue'
-import WelcomePay from './components/WelcomePay.vue'
-
-// Di default mostra la pagina di benvenuto/pagamento
-const showWelcome = ref(true)
-</script>
+<style>
+/* Reset base per occupare tutto lo schermo */
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+</style>
