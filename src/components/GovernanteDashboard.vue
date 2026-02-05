@@ -1,16 +1,17 @@
 <template>
-  <div class="min-h-screen bg-pink-50 pb-20 relative">
+  <div class="min-h-screen bg-slate-50 pb-20 relative">
 
-    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-pink-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
+    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-[#707eff]/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
       <div class="text-6xl mb-6 animate-pulse">🗝️</div>
       <h2 class="text-3xl font-black mb-2">GOVERNANTE</h2>
       <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Clicca per gestire lo staff e le stanze.</p>
-      <button @click="enableAudio" class="btn btn-white text-pink-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
+      
+      <button @click="enableAudio" class="btn btn-white text-[#707eff] font-black btn-lg shadow-xl hover:scale-105 transition-transform">
         INIZIA TURNO
       </button>
     </div>
 
-    <div class="navbar bg-pink-600 text-white shadow-lg sticky top-0 z-50">
+    <div class="navbar bg-[#707eff] text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
         <span class="font-black text-xl">GOVERNANTE</span>
@@ -32,7 +33,7 @@
           🔧 IN MANUTENZIONE
         </div>
         
-        <p v-if="room.current_cleaner" class="text-xs text-pink-600 font-bold mt-2 truncate">🧹 {{ room.current_cleaner }}</p>
+        <p v-if="room.current_cleaner" class="text-xs text-[#707eff] font-bold mt-2 truncate">🧹 {{ room.current_cleaner }}</p>
         <p v-else class="mt-2 text-xs text-gray-300">-</p>
 
         <button @click="openManageModal(room)" class="btn btn-sm btn-outline btn-secondary w-full mt-2">GESTISCI</button>
@@ -44,8 +45,9 @@
         <h3 class="font-bold text-lg text-center mb-4 uppercase">Stanza {{ selectedRoom?.number }}</h3>
         
         <div class="flex flex-col gap-4">
-          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-            <h4 class="text-xs font-black text-blue-800 uppercase mb-3">🧹 Assegna Pulizia</h4>
+          
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-black text-slate-600 uppercase mb-3">🧹 Assegna Pulizia</h4>
             <div class="flex gap-2">
               <select v-model="selectedCleaner" class="select select-bordered select-sm flex-1 bg-white">
                 <option disabled value="">Staff Pulizie...</option>
@@ -109,7 +111,6 @@ const fetchData = async () => {
   techList.value = s?.filter(m => m.role === 'maintenance') || []
 
   const { data: i } = await supabase.from('issues').select('room_number').eq('hotel_id', hotelId).eq('status', 'open')
-  // Sempre String() per sicurezza
   if (i) activeIssues.value = i.map(ticket => String(ticket.room_number))
   else activeIssues.value = []
 }

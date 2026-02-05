@@ -1,10 +1,9 @@
 <template>
   <div class="min-h-screen bg-slate-50 pb-20">
-    <div class="navbar bg-slate-800 text-white shadow-lg sticky top-0 z-50">
+    <div class="navbar bg-[#707eff] text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
-        <span class="font-black text-xl text-blue-400">ADMIN PANEL</span>
-      </div>
+        <span class="font-black text-xl text-white">ADMIN PANEL</span> </div>
       <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
     </div>
 

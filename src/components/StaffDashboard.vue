@@ -1,11 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20 relative">
+  <div class="min-h-screen bg-slate-50 pb-20 relative">
     
-    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-blue-600/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
+    <div v-if="!audioEnabled" class="fixed inset-0 z-[999] bg-[#707eff]/95 flex flex-col items-center justify-center text-white text-center p-6 backdrop-blur-sm">
       <div class="text-6xl mb-6 animate-pulse">🧹</div>
       <h2 class="text-3xl font-black mb-2">HOUSEKEEPING</h2>
       <p class="mb-8 font-bold opacity-80 max-w-xs mx-auto">Ciao {{ currentCleanerName }}! Inizia il turno.</p>
-      <button @click="enableAudio" class="btn btn-white text-blue-600 font-black btn-lg shadow-xl hover:scale-105 transition-transform">
+      
+      <button @click="enableAudio" class="btn btn-white text-[#707eff] font-black btn-lg shadow-xl hover:scale-105 transition-transform">
         INIZIA TURNO
       </button>
     </div>
@@ -16,26 +17,41 @@
       </div>
     </div>
 
-    <div class="navbar bg-blue-600 text-white shadow-lg sticky top-0 z-50">
+    <div class="navbar bg-[#707eff] text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
         <span class="font-black text-xl">HOUSEKEEPING</span>
-        <span class="text-[10px] bg-blue-800 px-2 py-1 rounded text-white mt-1">Ciao, {{ currentCleanerName }}! 👋</span>
+        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded text-white mt-1 font-bold">Ciao, {{ currentCleanerName }}! 👋</span>
       </div>
       <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
     </div>
 
     <div class="p-4 space-y-3">
-      <div v-for="room in rooms" :key="room.id" class="card bg-white shadow-md border-l-8 transition-all" :class="{'border-green-500 opacity-60': room.status === 'clean', 'border-red-500': room.status === 'dirty', 'border-yellow-400': room.status === 'cleaning', 'border-blue-500 opacity-40': room.status === 'occupied'}">
+      <div v-for="room in rooms" :key="room.id" class="card bg-white shadow-md border-l-8 transition-all" 
+           :class="{
+             'border-green-500 opacity-60': room.status === 'clean', 
+             'border-red-500': room.status === 'dirty', 
+             'border-yellow-400': room.status === 'cleaning', 
+             'border-blue-500 opacity-40': room.status === 'occupied'
+           }">
+        
         <div class="card-body p-4 flex flex-row items-center justify-between">
           <div>
             <h2 class="text-3xl font-black text-gray-800">{{ room.number }}</h2>
-            <span class="font-bold text-[10px] uppercase tracking-wider" :class="{'text-green-600': room.status === 'clean','text-red-600': room.status === 'dirty','text-yellow-600': room.status === 'cleaning','text-blue-600': room.status === 'occupied'}">
+            <span class="font-bold text-[10px] uppercase tracking-wider" 
+                  :class="{
+                    'text-green-600': room.status === 'clean',
+                    'text-red-600': room.status === 'dirty',
+                    'text-yellow-600': room.status === 'cleaning',
+                    'text-blue-600': room.status === 'occupied'
+                  }">
                {{ getStatusText(room.status) }}
             </span>
           </div>
+          
           <div class="flex gap-2 items-center">
             <button @click="openIssueModal(room)" class="btn btn-circle btn-warning text-white btn-sm shadow-sm">⚠️</button>
+            
             <button v-if="room.status === 'dirty'" @click="startCleaning(room)" class="btn w-24 bg-red-500 hover:bg-red-600 text-white border-none shadow-md font-bold">INIZIA</button>
             <button v-else-if="room.status === 'cleaning'" @click="finishCleaning(room)" class="btn w-24 bg-yellow-400 hover:bg-yellow-500 text-black border-none shadow-md font-bold animate-pulse">FINITO</button>
             <div v-else-if="room.status === 'clean'" class="btn btn-circle bg-gray-100 text-gray-300 border-none cursor-default">✓</div>
@@ -47,15 +63,17 @@
 
     <dialog id="staff_modal" class="modal modal-bottom sm:modal-middle">
       <div class="modal-box bg-white">
-        <h3 class="font-bold text-lg text-center mb-4">⚠️ Guasto Stanza {{ selectedRoom?.number }}</h3>
+        <h3 class="font-bold text-lg text-center mb-4 text-slate-800 uppercase">⚠️ Guasto Stanza {{ selectedRoom?.number }}</h3>
+        
         <div class="flex flex-col gap-3">
-          <button @click="reportIssue('💡 Lampadina Rotta')" class="btn btn-outline w-full justify-start pl-6">💡 Lampadina Rotta</button>
+          <button @click="reportIssue('💡 Lampadina Rotta')" class="btn btn-outline w-full justify-start pl-6 normal-case font-bold text-slate-600 border-slate-300">💡 Lampadina Rotta</button>
+          
           <div class="flex gap-2">
-            <input v-model="customIssue" type="text" placeholder="Descrivi..." class="input input-bordered w-full" />
-            <button @click="reportIssue(customIssue)" class="btn btn-warning text-white">INVIA</button>
+            <input v-model="customIssue" type="text" placeholder="Descrivi il problema..." class="input input-bordered w-full bg-slate-50" />
+            <button @click="reportIssue(customIssue)" class="btn btn-warning text-white font-bold">INVIA</button>
           </div>
         </div>
-        <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full">Chiudi</button></form></div>
+        <div class="modal-action"><form method="dialog"><button class="btn btn-ghost w-full text-slate-400">Chiudi</button></form></div>
       </div>
     </dialog>
   </div>
@@ -77,6 +95,7 @@ const audioEnabled = ref(false)
 const lastDirtyCount = ref(-1)
 let pollingInterval = null
 
+// --- SUONI ---
 const playStartSound = () => {
   const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg')
   audio.volume = 0.5
@@ -94,7 +113,7 @@ const enableAudio = () => { audioEnabled.value = true; playStartSound() }
 
 const fetchRooms = async () => { 
   const { data } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
-  
+   
   if (data) {
     const currentDirty = data.filter(r => r.status === 'dirty').length
     if (lastDirtyCount.value !== -1 && currentDirty > lastDirtyCount.value) {
