@@ -7,12 +7,8 @@
            <div class="absolute -top-10 -left-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
            <div class="absolute bottom-0 right-0 w-32 h-32 bg-black rounded-full blur-2xl"></div>
         </div>
-
         <img src="/logo.png" alt="HTLfix Logo" class="h-28 w-auto drop-shadow-2xl relative z-10 animate-pulse rounded-3xl" />
-
-        <p class="text-blue-100 text-xs font-bold uppercase tracking-[0.2em] mt-4 relative z-10">
-          HTLfix HOTEL ASSISTANT
-        </p>
+        <p class="text-blue-100 text-xs font-bold uppercase tracking-[0.2em] mt-4 relative z-10">HTLfix HOTEL ASSISTANT</p>
       </div>
 
       <div class="card-body p-6">
@@ -33,11 +29,11 @@
           <div v-if="mode === 'login'" class="space-y-4 animate-fade-in">
             <div>
               <label class="label text-[10px] font-bold text-gray-500 uppercase">Nome Hotel</label>
-              <input v-model="hotelName" type="text" placeholder="Es. Hotel Roma" class="input input-bordered input-sm w-full font-bold text-gray-700 focus:border-[#707eff] focus:ring-1 focus:ring-[#707eff]" />
+              <input v-model="hotelName" type="text" placeholder="Es. Hotel Roma" class="input input-bordered input-sm w-full font-bold text-gray-700" />
             </div>
             <div>
               <label class="label text-[10px] font-bold text-gray-500 uppercase">Password Hotel</label>
-              <input v-model="hotelPass" type="password" placeholder="Password condivisa staff" class="input input-bordered input-sm w-full focus:border-[#707eff] focus:ring-1 focus:ring-[#707eff]" />
+              <input v-model="hotelPass" type="password" placeholder="Password condivisa staff" class="input input-bordered input-sm w-full" />
             </div>
             <button @click="loginHotel" class="btn bg-[#707eff] hover:bg-[#5a65cc] text-white border-none w-full btn-sm mt-2 shadow-lg" :disabled="loading">
               {{ loading ? 'Verifica...' : 'ENTRA NELL\'HOTEL' }}
@@ -46,27 +42,22 @@
 
           <div v-else class="space-y-3 animate-fade-in">
             <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-2">
-              <p class="text-xs text-yellow-800 text-center font-bold">Hai pagato i 29€? Inserisci qui il codice ricevuto via email per attivare il tuo Hotel.</p>
+              <p class="text-xs text-yellow-800 text-center font-bold">Usa il codice ricevuto via email per attivare il tuo Hotel.</p>
             </div>
-
             <div class="grid grid-cols-1 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
                 <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">1. Il tuo Codice</h4>
                 <input v-model="inviteCode" type="text" placeholder="HTL-XXXX-XXXX" class="input input-bordered input-sm w-full border-blue-300 bg-white font-mono font-bold text-blue-800 placeholder-blue-200 uppercase" />
             </div>
-
             <div class="grid grid-cols-1 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
                 <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">2. Configura Hotel</h4>
                 <input v-model="newHotelName" type="text" placeholder="Nome Hotel (Es. Hotel Milano)" class="input input-bordered input-sm w-full" />
                 <input v-model="newHotelPass" type="password" placeholder="Crea Password Staff" class="input input-bordered input-sm w-full" />
-                <p class="text-[9px] text-gray-400 mt-1">Questa password servirà al tuo staff per accedere all'iPad/Tablet.</p>
             </div>
-
             <div class="text-center mt-1">
                <p class="text-[10px] text-gray-400">Verrai registrato come Direttore. PIN Default: <b class="text-gray-800">9999</b></p>
             </div>
-
             <button @click="handleFullRegistration" class="btn bg-black hover:bg-gray-800 text-white border-none w-full btn-sm mt-2 shadow-lg" :disabled="loading">
-              {{ loading ? 'Configurazione in corso...' : 'ATTIVA ABBONAMENTO E CREA' }}
+              {{ loading ? 'Attivazione in corso...' : 'ATTIVA E CREA HOTEL' }}
             </button>
           </div>
         </div>
@@ -76,18 +67,13 @@
              <h2 class="text-xl font-bold text-gray-800 uppercase tracking-tight">{{ currentHotelData.name }}</h2>
              <div class="badge badge-success text-white text-[10px] font-bold px-3 py-1 mt-1 shadow-sm">CONNESSIONE STABILITA</div>
           </div>
-          
           <p class="text-center text-gray-400 mb-2 text-xs font-bold uppercase tracking-widest">Inserisci il tuo PIN Personale</p>
-          
           <input v-model="userPin" type="password" placeholder="****" class="input input-bordered w-full text-center text-4xl tracking-[0.5em] mb-6 font-black h-16 bg-gray-50 focus:bg-white focus:border-[#707eff] transition-all" maxlength="4" inputmode="numeric" @keyup.enter="loginUser" />
-          
           <button @click="loginUser" class="btn bg-[#707eff] hover:bg-[#5a65cc] text-white border-none w-full mb-3 h-12 text-lg font-bold shadow-md">
             {{ loading ? 'Accesso...' : 'ENTRA' }}
           </button>
-          
           <button @click="step = 'hotel-gate'; userPin = '';" class="btn btn-ghost btn-xs w-full text-gray-400 hover:bg-transparent">Cambia Hotel</button>
         </div>
-
       </div>
     </div>
   </div>
@@ -99,60 +85,48 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
 const router = useRouter()
-
-// Stati Navigazione
-const step = ref('hotel-gate') // 'hotel-gate' oppure 'role-gate'
-const mode = ref('login')      // 'login' oppure 'register'
+const step = ref('hotel-gate') 
+const mode = ref('login')
 const loading = ref(false)
-
-// Messaggi Feedback
 const msg = ref('')
 const msgType = ref('error')
 
-// Dati Login Hotel Esistente
 const hotelName = ref('')
 const hotelPass = ref('')
-
-// Dati Registrazione Nuovo Hotel
 const inviteCode = ref('')
 const newHotelName = ref('')
 const newHotelPass = ref('')
-
-// Dati Login Utente (PIN)
 const userPin = ref('')
 const currentHotelData = ref(null)
 
-// --- FUNZIONE 1: REGISTRAZIONE NUOVO HOTEL (CON CODICE) ---
+// --- REGISTRAZIONE NUOVO HOTEL (CON BLOCCO CODICE USATO) ---
 const handleFullRegistration = async () => {
-  // Validazione Campi
   if (!inviteCode.value || !newHotelName.value || !newHotelPass.value) {
-    showMsg('Compila tutti i campi: Codice, Nome Hotel e Password.', 'error'); return;
+    showMsg('Compila tutti i campi.', 'error'); return;
   }
-
   loading.value = true
   msg.value = ''
   
   const cleanCode = inviteCode.value.trim().toUpperCase()
 
   try {
-    // A. Verifica Codice nella tabella access_codes
+    // 1. CONTROLLO RIGOROSO DEL CODICE
+    // Cerchiamo SOLO codici non usati (is_used = false)
     const { data: codeData, error: codeError } = await supabase
       .from('access_codes')
       .select('*')
       .eq('code', cleanCode)
       .single()
 
-    if (codeError || !codeData) throw new Error("Codice invito non trovato. Controlla l'email.")
-    if (codeData.is_used) throw new Error("Questo codice è già stato utilizzato.")
+    if (codeError || !codeData) throw new Error("Codice non trovato o errore di connessione.")
+    
+    // Doppio controllo di sicurezza
+    if (codeData.is_used === true) throw new Error("Questo codice è GIÀ stato utilizzato!")
 
-    // B. Crea l'Hotel nella tabella hotels
+    // 2. Crea l'Hotel
     const { data: hotelData, error: hotelError } = await supabase
       .from('hotels')
-      .insert([{ 
-        name: newHotelName.value, 
-        password: newHotelPass.value 
-        // owner_id opzionale se non usi Supabase Auth, qui lo omettiamo per semplicità
-      }])
+      .insert([{ name: newHotelName.value, password: newHotelPass.value }])
       .select()
       .single()
 
@@ -161,14 +135,15 @@ const handleFullRegistration = async () => {
       throw hotelError
     }
 
-    // C. Brucia il codice (segnalo come usato)
-    await supabase
+    // 3. BRUCIA IL CODICE IMMEDIATAMENTE
+    const { error: updateError } = await supabase
       .from('access_codes')
       .update({ is_used: true, hotel_id: hotelData.id, used_at: new Date() })
       .eq('id', codeData.id)
+    
+    if (updateError) console.error("Errore aggiornamento codice:", updateError)
 
-    // D. CREA AUTOMATICAMENTE L'ADMIN (DIRETTORE) con PIN 9999
-    // Questo è il passaggio fondamentale che mancava!
+    // 4. CREA IL DIRETTORE (9999)
     const { error: staffError } = await supabase
       .from('staff_members')
       .insert([{
@@ -180,24 +155,21 @@ const handleFullRegistration = async () => {
     
     if (staffError) throw staffError
 
-    // E. Tutto ok, entra subito
-    showMsg('Hotel attivato! Entra col PIN 9999.', 'success')
+    showMsg('Hotel creato! Usa il PIN 9999.', 'success')
     enterHotel(hotelData)
 
   } catch (err) {
     console.error(err)
-    showMsg(err.message || "Errore sconosciuto.", 'error')
+    showMsg(err.message, 'error')
   } finally {
     loading.value = false
   }
 }
 
-// --- FUNZIONE 2: LOGIN HOTEL ESISTENTE ---
+// --- LOGIN HOTEL ---
 const loginHotel = async () => {
-  if(!hotelName.value || !hotelPass.value) { showMsg('Inserisci nome e password hotel', 'error'); return }
-  
+  if(!hotelName.value || !hotelPass.value) { showMsg('Inserisci dati hotel', 'error'); return }
   loading.value = true; msg.value = ''
-  
   try {
     const { data, error } = await supabase
       .from('hotels')
@@ -207,7 +179,6 @@ const loginHotel = async () => {
       .single()
     
     if (error || !data) throw new Error('Credenziali hotel errate.')
-    
     enterHotel(data)
   } catch (e) {
     showMsg(e.message, 'error')
@@ -216,40 +187,42 @@ const loginHotel = async () => {
   }
 }
 
-// --- FUNZIONE 3: LOGIN UTENTE (PIN) ---
+// --- LOGIN UTENTE (PIN) ---
 const loginUser = async () => {
   if (!userPin.value) return
   loading.value = true
-
   const h = currentHotelData.value
   
   try {
-    // Cerchiamo l'utente nella tabella staff_members
-    // Questo gestisce ORA TUTTI: Admin, Reception, Staff, ecc.
+    console.log(`Cerco utente in hotel ID: ${h.id} con PIN: ${userPin.value}`)
+
     const { data: staffMember, error } = await supabase
       .from('staff_members')
       .select('*')
       .eq('hotel_id', h.id)
-      .eq('pin', userPin.value)
+      .eq('pin', userPin.value) // Assicurati che su Supabase il PIN sia testo (text/varchar)
       .single()
 
-    if (error || !staffMember) {
-      throw new Error('PIN non valido.')
+    if (error) {
+      console.error("Errore Supabase:", error)
+      throw new Error('Errore di connessione o PIN errato.')
     }
 
-    // Login Successo: Salviamo in localStorage
+    if (!staffMember) throw new Error('PIN non trovato.')
+
+    // Salva sessione
     localStorage.setItem('htlfix_hotel_id', h.id)
     localStorage.setItem('htlfix_hotel_name', h.name) 
     localStorage.setItem('htlfix_user_role', staffMember.role)
     localStorage.setItem('htlfix_user_name', staffMember.name)
 
-    // Routing in base al ruolo
+    // Redirect
     if (staffMember.role === 'admin') router.push('/admin')
     else if (staffMember.role === 'reception') router.push('/reception')
     else if (staffMember.role === 'staff') router.push('/staff')
     else if (staffMember.role === 'maintenance') router.push('/manutenzione')
     else if (staffMember.role === 'governante') router.push('/governante')
-    else throw new Error('Ruolo non riconosciuto.')
+    else throw new Error('Ruolo sconosciuto.')
 
   } catch (e) {
     showMsg(e.message, 'error')
@@ -259,27 +232,20 @@ const loginUser = async () => {
   }
 }
 
-// --- HELPERS ---
 const enterHotel = (hotelData) => {
   currentHotelData.value = hotelData
-  step.value = 'role-gate' // Passa alla schermata PIN
+  step.value = 'role-gate'
   msg.value = ''
 }
 
 const showMsg = (message, type = 'error') => {
     msg.value = message
     msgType.value = type
-    // Nascondi messaggio dopo 4 secondi
     setTimeout(() => msg.value = '', 4000)
 }
 </script>
 
 <style scoped>
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.animate-fade-in { animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
