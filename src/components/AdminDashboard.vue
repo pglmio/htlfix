@@ -3,7 +3,8 @@
     <div class="navbar bg-[#707eff] text-white shadow-lg sticky top-0 z-50">
       <div class="flex-1 flex-col items-start ml-2">
         <span class="font-bold text-xs opacity-80 uppercase tracking-widest">{{ hotelName }}</span>
-        <span class="font-black text-xl text-white">ADMIN PANEL</span> </div>
+        <span class="font-black text-xl text-white">ADMIN PANEL</span>
+      </div>
       <button class="btn btn-sm btn-ghost text-white" @click="logout">Esci</button>
     </div>
 
@@ -32,10 +33,13 @@
                   <td>
                     <span class="badge badge-sm font-bold uppercase" :class="getRoleClass(member.role)">{{ member.role }}</span>
                   </td>
-                  <td class="font-mono text-lg font-bold text-blue-600">{{ member.pin }}</td>
+                  <td class="font-mono text-lg font-bold text-blue-600 tracking-widest">{{ member.pin }}</td>
                   <td>
                     <button @click="deleteStaff(member.id)" class="btn btn-ghost btn-xs text-error">Elimina</button>
                   </td>
+                </tr>
+                <tr v-if="staffList.length === 0">
+                    <td colspan="4" class="text-center text-gray-400 py-4">Nessun membro dello staff. Aggiungine uno!</td>
                 </tr>
               </tbody>
             </table>
@@ -50,9 +54,12 @@
             <button @click="addRoom" class="btn btn-outline btn-sm">+ AGGIUNGI STANZA</button>
           </div>
           <div class="flex flex-wrap gap-2">
-            <div v-for="room in rooms" :key="room.id" class="badge badge-lg py-4 px-6 border bg-slate-50 font-black">
+            <div v-for="room in rooms" :key="room.id" class="badge badge-lg py-4 px-6 border bg-slate-50 font-black relative group">
               {{ room.number }}
-              <button @click="deleteRoom(room.id)" class="ml-3 text-red-400 hover:text-red-600">×</button>
+              <button @click="deleteRoom(room.id)" class="ml-3 text-red-300 hover:text-red-600 transition-colors font-bold">×</button>
+            </div>
+             <div v-if="rooms.length === 0" class="w-full text-center text-gray-400 italic">
+                Nessuna stanza creata.
             </div>
           </div>
         </div>
@@ -79,7 +86,7 @@
           </div>
           <div class="form-control">
             <label class="label"><span class="label-text font-bold uppercase">PIN Accesso (4 cifre)</span></label>
-            <input v-model="newStaff.pin" type="text" maxlength="4" placeholder="Es. 1234" class="input input-bordered w-full font-mono text-2xl text-center" />
+            <input v-model="newStaff.pin" type="text" maxlength="4" inputmode="numeric" placeholder="Es. 1234" class="input input-bordered w-full font-mono text-2xl text-center" />
           </div>
           <button @click="saveStaff" class="btn btn-primary w-full mt-4 shadow-lg">SALVA STAFF 💾</button>
         </div>
@@ -96,16 +103,30 @@ import { supabase } from '../supabase'
 
 const router = useRouter()
 const hotelId = localStorage.getItem('htlfix_hotel_id')
-const hotelName = localStorage.getItem('htlfix_hotel_name')
+const hotelName = localStorage.getItem('htlfix_hotel_name') || 'Hotel' // Fallback se manca il nome
 const staffList = ref([])
 const rooms = ref([])
 const newStaff = ref({ name: '', role: 'staff', pin: '' })
 
+// 1. Controllo di sicurezza: se non c'è hotelId, torna al login
+if (!hotelId) {
+    router.push('/')
+}
+
 const fetchData = async () => {
+  if (!hotelId) return
   const { data: s } = await supabase.from('staff_members').select('*').eq('hotel_id', hotelId).order('name')
   staffList.value = s || []
-  const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).order('number')
-  rooms.value = r || []
+  
+  // Ordiniamo le stanze per numero (convertendo in numero se necessario per ordinamento corretto 1, 2, 10 invece di 1, 10, 2)
+  const { data: r } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId)
+  
+  if (r) {
+      // Piccolo trick per ordinare bene i numeri (es. 10 dopo 2)
+      rooms.value = r.sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }))
+  } else {
+      rooms.value = []
+  }
 }
 
 const openStaffModal = () => {
@@ -114,10 +135,18 @@ const openStaffModal = () => {
 }
 
 const saveStaff = async () => {
-  if (!newStaff.value.name || newStaff.value.pin.length !== 4) return alert('Dati incompleti!')
+  if (!newStaff.value.name || newStaff.value.pin.length !== 4) return alert('Dati incompleti! Il PIN deve essere di 4 cifre.')
+  
+  // MODIFICA: Gestione errore duplicati o problemi
   const { error } = await supabase.from('staff_members').insert([{ ...newStaff.value, hotel_id: hotelId }])
-  if (error) alert('Errore: Forse questo PIN è già usato?')
-  else { document.getElementById('staff_modal').close(); fetchData() }
+  
+  if (error) {
+      console.error(error)
+      alert('Errore durante il salvataggio. Forse il PIN o il nome è duplicato?')
+  } else { 
+      document.getElementById('staff_modal').close(); 
+      fetchData() 
+  }
 }
 
 const deleteStaff = async (id) => {
@@ -129,8 +158,17 @@ const deleteStaff = async (id) => {
 const addRoom = async () => {
   const num = prompt("Numero della nuova stanza:")
   if (!num) return
-  await supabase.from('rooms').insert([{ number: num, hotel_id: hotelId, status: 'clean' }])
-  fetchData()
+
+  // MODIFICA: Controllo errore (es. stanza già esistente)
+  const { error } = await supabase.from('rooms').insert([{ number: num, hotel_id: hotelId, status: 'clean' }])
+  
+  if (error) {
+      // Codice errore 23505 è "Unique Violation" in Postgres
+      if (error.code === '23505') alert('Questa stanza esiste già!')
+      else alert('Errore creazione stanza: ' + error.message)
+  } else {
+      fetchData()
+  }
 }
 
 const deleteRoom = async (id) => {
@@ -143,10 +181,14 @@ const getRoleClass = (role) => {
   if (role === 'staff') return 'badge-info text-white'
   if (role === 'maintenance') return 'badge-warning text-white'
   if (role === 'governante') return 'badge-secondary'
+  if (role === 'reception') return 'badge-accent text-white'
   return 'badge-ghost'
 }
 
-const logout = () => { localStorage.clear(); router.push('/') }
+const logout = () => { 
+    localStorage.clear(); 
+    router.push('/') 
+}
 
 onMounted(fetchData)
 </script>
