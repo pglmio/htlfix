@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-    <div class="card w-full max-w-md bg-white shadow-xl rounded-xl overflow-hidden">
+    <div class="card w-full w-full bg-white shadow-xl min-h-screen overflow-hidden">
       
       <div class="bg-blue-600 py-10 px-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
         <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
