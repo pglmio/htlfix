@@ -23,12 +23,12 @@
       <div class="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
         
         <div class="mb-8">
-          <span class="bg-green-500 text-black text-xs font-black px-2 py-1 rounded uppercase tracking-widest">Accesso Pro</span>
+          <span class="bg-green-500 text-black text-xs font-black px-2 py-1 rounded uppercase tracking-widest">Accesso BETA</span>
           <div class="flex items-center justify-center mt-4">
             <span class="text-5xl font-black text-white">€29</span>
             <span class="text-gray-400 ml-2 text-lg">/ mese</span>
           </div>
-          <p class="text-sm text-gray-400 mt-2">Disdici in qualsiasi momento.</p>
+          <p class="text-sm text-gray-400 mt-2">Abbonamento Mensile posti LIMITATI.</p>
         </div>
 
         <button @click="goToStripe" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-blue-500/50 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center group">
@@ -97,6 +97,6 @@ const getTitle = (type) => {
 const goToStripe = () => {
   // ⚠️ IMPORTANTE: INCOLLA QUI SOTTO IL TUO LINK VERO DI STRIPE
   // Altrimenti vedrai l'errore "AccessDenied"
-  window.location.href = 'https://buy.stripe.com/TUO_LINK_QUI'
+  window.location.href = 'https://buy.stripe.com/test_6oU7sL2rl0xbe4q8aefnO00'
 }
 </script>
