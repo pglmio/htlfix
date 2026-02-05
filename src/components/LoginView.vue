@@ -1,10 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 px-4 relative">
     
-    <button @click="resetApp" class="fixed top-4 right-4 btn btn-xs btn-error z-50 opacity-70 hover:opacity-100 font-bold text-white">
-      🔄 RESET APP
-    </button>
-
     <div class="card w-full max-w-md bg-white shadow-xl min-h-screen md:min-h-[600px] overflow-hidden">
       
       <div class="bg-[#707eff] py-10 px-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
@@ -103,14 +99,6 @@ const newHotelName = ref('')
 const newHotelPass = ref('')
 const userPin = ref('')
 const currentHotelData = ref(null)
-
-// --- FUNZIONE RESET APP (NUOVA) ---
-const resetApp = () => {
-    if(confirm("Vuoi resettare l'app e pulire la cache?")) {
-        localStorage.clear();
-        window.location.reload();
-    }
-}
 
 // --- REGISTRAZIONE ---
 const handleFullRegistration = async () => {
