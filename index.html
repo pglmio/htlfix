@@ -1,15 +1,391 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" href="/logo.png">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>HTLfix</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTLfix | Hotel Operating System</title>
+    
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <style>
+        /* --- RESET & VARIABLES --- */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #11111e;
+            --text-main: #ffffff;
+            --text-muted: #a1a1a1;
+            
+            /* COLORI: BLU ELETTRICO / VIOLA */
+            --accent: #224bff; 
+            --accent-secondary: #c243e0;
+            --gradient: linear-gradient(135deg, #224bff, #c243e0);
+            --accent-glow: rgba(34, 75, 255, 0.25);
+            
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 { font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+        h1 { font-size: 3.5rem; margin-bottom: 20px; background: linear-gradient(to right, #fff, #b0b0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 2.5rem; margin-bottom: 15px; }
+        p { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 20px; }
+        
+        .highlight { color: var(--accent-secondary); }
+
+        /* --- NAVBAR & LOGO --- */
+        .navbar {
+            position: absolute;
+            top: 1cm; 
+            left: 1cm;
+            z-index: 999;
+        }
+
+        .logo-slot {
+            display: block;
+            width: 3cm;
+            height: 3cm; 
+        }
+
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* --- BRAND HERO CENTER --- */
+        .brand-container {
+            margin-bottom: 40px;
+            display: inline-block;
+            border-bottom: 1px solid #222;
+            padding-bottom: 20px;
+            padding-top: 60px;
+            width: 100%;
+        }
+        
+        .brand-logo {
+            font-size: 3rem; 
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -2px;
+            text-transform: uppercase;
+            display: block;
+            line-height: 1;
+        }
+
+        .brand-logo span {
+            color: var(--accent); 
+        }
+
+        .brand-sub {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 5px; 
+            color: var(--text-muted);
+            font-weight: 400;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* --- LAYOUT UTILS --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .section { padding: 80px 0; }
+        .text-center { text-align: center; }
+        .grid { display: grid; gap: 30px; }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: var(--gradient); 
+            color: #fff;
+            box-shadow: 0 0 20px var(--accent-glow);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid #333;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        .btn-ghost:hover {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        /* --- HERO SECTION --- */
+        header {
+            padding: 0 0 60px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(34, 75, 255, 0.15);
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            border: 1px solid rgba(34, 75, 255, 0.3);
+            color: #b0b0ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        /* --- OFFER BOX (Stile principale) --- */
+        .offer-box {
+            background: linear-gradient(145deg, #151525 0%, #0a0a10 100%);
+            border: 1px solid var(--accent);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            max-width: 600px; /* Leggermente più stretto per l'Hero */
+            margin: 0 auto 50px; /* Margine sotto */
+            box-shadow: 0 0 50px rgba(34, 75, 255, 0.15);
+        }
+        
+        .badge-offer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--gradient);
+            color: #fff;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .price { font-size: 3rem; font-weight: 800; color: #fff; margin: 15px 0; line-height: 1; }
+        .price span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+        .price-sub { display: block; font-size: 1rem; color: var(--text-muted); margin-top: 5px; margin-bottom: 20px;}
+        .price-strike { text-decoration: line-through; color: #555; font-size: 1.5rem; margin-right: 10px; }
+
+        /* --- HERO LAYOUT (IMMAGINI) --- */
+        .hero-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hero-horizontal-slot {
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+            aspect-ratio: 16/9; 
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: 1px solid #333;
+            overflow: hidden;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .hero-vertical-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .hero-vertical-slot {
+            width: 100%;
+            aspect-ratio: 9/16;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: 1px solid #333;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        img.mockup-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+        
+        .hero-horizontal-slot:hover img.mockup-img, 
+        .hero-vertical-slot:hover img.mockup-img {
+            transform: scale(1.02);
+        }
+
+        /* --- FEATURES --- */
+        .feature-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #222;
+            transition: 0.2s;
+        }
+        
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+        }
+        
+        .icon { font-size: 2rem; margin-bottom: 15px; display: block; }
+
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 900px) {
+            h1 { font-size: 2.5rem; }
+            .brand-logo { font-size: 2.5rem; }
+            .brand-sub { letter-spacing: 3px; font-size: 0.8rem; }
+            .offer-box { padding: 30px 20px; }
+            
+            .hero-vertical-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .navbar { top: 15px; left: 15px; }
+            .logo-slot { width: 60px; height: 60px; }
+            .brand-container { padding-top: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar container">
+        <a href="#" class="logo-slot">
+            <img src="logo.png" alt="HTLfix Logo" class="logo-img">
+        </a>
+    </nav>
+
+    <header class="container">
+        
+        <div class="brand-container">
+            <div class="brand-logo">HTL<span>fix</span></div>
+            <div class="brand-sub">Hotel Operating System</div>
+        </div>
+
+        <div class="hero-badge">🚀 Founder's Club Aperto</div>
+        
+        <h1>Basta Carta. Basta Caos.<br>Solo <span class="highlight">Efficienza.</span></h1>
+        <p style="max-width: 600px; margin: 0 auto 30px;">
+            Il sistema operativo moderno per housekeeping e manutenzione. 
+            Pensato per gli hotel che vogliono smettere di perdere tempo e ticket.
+        </p>
+        
+        <div class="offer-box">
+            <div class="badge-offer">Posti Limitati</div>
+            <h2>Entra nel Founder's Club</h2>
+            <p style="font-size: 0.95rem; margin-bottom: 15px;">
+                Ottieni accesso a vita e supporto prioritario diretto con lo sviluppatore.
+            </p>
+            
+            <div class="price">
+                <span class="price-strike">€79</span>
+                €29 <span>/ mese</span>
+            </div>
+            <div class="price-sub">Prezzo bloccato per sempre.</div>
+            
+            <p style="font-size: 0.85rem; margin-bottom: 25px; opacity: 0.8;">
+                Nessun costo nascosto. Setup incluso. Disdici quando vuoi.
+            </p>
+
+            <a href="https://app.htlfix.com" class="btn btn-primary" style="width: 100%;">
+                Blocca Prezzo Founder
+            </a>
+            
+            <p style="font-size: 0.75rem; margin-top: 12px; opacity: 0.6;">
+                L'offerta scade all'esaurimento dei founder slot.
+            </p>
+        </div>
+
+        <div class="hero-layout">
+            
+            <div class="hero-horizontal-slot">
+                <img src="screen_h.png" alt="Dashboard Desktop" class="mockup-img" onerror="this.style.opacity='0.1'">
+            </div>
+
+            <div class="hero-vertical-row">
+                <div class="hero-vertical-slot">
+                    <img src="screen_v1.png" alt="Mobile 1" class="mockup-img" onerror="this.style.opacity='0.1'">
+                </div>
+                <div class="hero-vertical-slot">
+                    <img src="screen_v2.png" alt="Mobile 2" class="mockup-img" onerror="this.style.opacity='0.1'">
+                </div>
+                <div class="hero-vertical-slot">
+                    <img src="screen_v3.png" alt="Mobile 3" class="mockup-img" onerror="this.style.opacity='0.1'">
+                </div>
+                <div class="hero-vertical-slot">
+                    <img src="screen_v4.png" alt="Mobile 4" class="mockup-img" onerror="this.style.opacity='0.1'">
+                </div>
+            </div>
+
+        </div>
+
+    </header>
+
+    <section class="section container">
+        <div class="text-center" style="margin-bottom: 50px;">
+            <h2>Tutto quello che serve. <br>Niente che distrae.</h2>
+        </div>
+        <div class="grid grid-3">
+            <div class="feature-card">
+                <span class="icon">🧹</span>
+                <h3>Housekeeping Smart</h3>
+                <p>Stato delle camere in tempo reale. Le governanti aggiornano lo status con un click. Zero walkie-talkie.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">🛠️</span>
+                <h3>Ticket Manutenzione</h3>
+                <p>Niente più post-it persi. Segnala un guasto, assegnalo al tecnico e ricevi notifica quando è risolto.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">📊</span>
+                <h3>Dashboard Totale</h3>
+                <p>Hai il controllo completo della struttura da un'unica schermata. Report, statistiche e flussi reali.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="text-center" style="padding: 40px 0; color: #444; font-size: 0.8rem;">
+        <p style="margin-bottom: 20px;">Hai domande prima di acquistare?</p>
+        
+        <a href="mailto:info@htlfix.com?subject=Richiesta%20Info%20Founder%20Club%20HTLfix" class="btn btn-ghost">
+            Contatta Manuel (Founder)
+        </a>
+        
+        <p style="margin-top: 40px;">&copy; 2026 HTLfix. Built by Manuel Puglisi.</p>
+    </footer>
+
+</body>
 </html>
