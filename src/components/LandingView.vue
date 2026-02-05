@@ -85,9 +85,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router' // 1. Importiamo il router
+import { useRouter } from 'vue-router' // 1. Importo il router
 
-const router = useRouter() // 2. Attiviamo il router
+const router = useRouter() // 2. Attivo il router per usarlo nel template
 const activeModal = ref(null)
 
 const getTitle = (type) => {
@@ -97,6 +97,7 @@ const getTitle = (type) => {
 }
 
 const goToStripe = () => {
+  // Sostituisci con il link vero quando sei pronto
   window.location.href = 'https://buy.stripe.com/test_6oU7sL2rl0xbe4q8aefnO00'
 }
 </script>
