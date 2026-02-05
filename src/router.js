@@ -1,21 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 1. Importa la nuova Landing
+// 1. Importiamo le pagine (Assicurati che i nomi dei file siano identici!)
 import LandingView from './components/LandingView.vue'
-import LoginView from './components/LoginView.vue'
-import AdminDashboard from './components/AdminDashboard.vue'
-// ... gli altri import che avevi già ...
+import LoginView from './components/LoginView.vue' 
 
 const routes = [
-  // 2. La strada principale "/" ora porta alla Landing
+  // La Landing Page (Vetrina)
   { path: '/', name: 'Landing', component: LandingView },
   
-  // 3. Cambiamo la strada del Login in "/app" o lasciamo così, 
-  // ma dobbiamo assicurarci che la Landing sappia come portarci al Login.
-  { path: '/login', name: 'Login', component: LoginView },
-  
-  { path: '/admin', name: 'Admin', component: AdminDashboard },
-  // ... le altre rotte ...
+  // La Login (Ingresso App) - QUESTA È QUELLA CHE TI SERVE
+  { path: '/login', name: 'Login', component: LoginView }
 ]
 
 const router = createRouter({

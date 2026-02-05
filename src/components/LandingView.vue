@@ -85,9 +85,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router' // 1. Importo il router
+import { useRouter } from 'vue-router' // <--- IMPORTANTE
 
-const router = useRouter() // 2. Attivo il router per usarlo nel template
+const router = useRouter() // <--- IMPORTANTE: Senza questo il tasto è morto
 const activeModal = ref(null)
 
 const getTitle = (type) => {
