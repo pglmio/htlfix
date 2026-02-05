@@ -23,9 +23,9 @@
       <div class="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
         
         <div class="mb-8">
-          <span class="bg-green-500 text-black text-xs font-black px-2 py-1 rounded uppercase tracking-widest">Accesso Completo</span>
+          <span class="bg-green-500 text-black text-xs font-black px-2 py-1 rounded uppercase tracking-widest">Accesso Completo - invece di €79/mese</span>
           <div class="flex items-center justify-center mt-4">
-            <span class="text-5xl font-black text-white">No €79 -> €29</span>
+            <span class="text-5xl font-black text-white">€29</span>
             <span class="text-gray-400 ml-2 text-lg">/ mese</span>
           </div>
           <p class="text-sm text-gray-400 mt-2">Abbonamento Mensile posti LIMITATI.</p>
