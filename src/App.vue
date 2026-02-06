@@ -1,13 +1,11 @@
 <template>
-  <router-view />
+  <router-view></router-view>
 </template>
 
+<script setup>
+// Qui non serve logica, la logica è nelle singole View
+</script>
+
 <style>
-/* Reset base per occupare tutto lo schermo */
-html, body, #app {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-}
+/* Eventuali stili globali (Tailwind è già attivo altrove) */
 </style>

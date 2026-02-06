@@ -1,9 +1,8 @@
 import { createApp } from 'vue'
-import './style.css'
 import App from './App.vue'
-import router from './router.js' // <--- Importante: importiamo il router appena creato
+import router from './router' // <--- Deve importare il file router.js
+import './style.css'
 
 const app = createApp(App)
-
-app.use(router) // <--- Importante: diciamo all'app di usarlo
+app.use(router) // <--- Deve dire a Vue di usare il router
 app.mount('#app')

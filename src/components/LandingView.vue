@@ -85,9 +85,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router' // <--- IMPORTANTE
+import { useRouter } from 'vue-router' // 1. IMPORTA QUESTO
 
-const router = useRouter() // <--- IMPORTANTE: Senza questo il tasto è morto
+const router = useRouter() // 2. ATTIVA QUESTO (Senza questo, il click è morto)
 const activeModal = ref(null)
 
 const getTitle = (type) => {
@@ -97,7 +97,6 @@ const getTitle = (type) => {
 }
 
 const goToStripe = () => {
-  // Sostituisci con il link vero quando sei pronto
   window.location.href = 'https://buy.stripe.com/test_6oU7sL2rl0xbe4q8aefnO00'
 }
 </script>
