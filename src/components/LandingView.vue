@@ -97,6 +97,6 @@ const getTitle = (type) => {
 }
 
 const goToStripe = () => {
-  window.location.href = 'https://buy.stripe.com/test_6oU7sL2rl0xbe4q8aefnO00'
+  window.location.href = 'https://buy.stripe.com/14A8wP8Q1fUn9IFe5h9R600'
 }
 </script>
